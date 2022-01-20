@@ -10,14 +10,13 @@ package main
 
 #include "lightdm.h"
 
-extern void test_cb(void);
+extern void authentication_complete_cb(void);
+extern void show_prompt_cb(void);
 
-void connect_wrapper(GObject* instance, const gchar* detailed_signal, void (*c_handler)(void)) {
-    g_signal_connect(instance, detailed_signal, G_CALLBACK(c_handler), NULL);
-}
-
-void authenticate_signal_connect(LightDMGreeter* greeter) {
-    g_signal_connect(greeter, "authentication-complete", G_CALLBACK(test_cb), NULL);
+__attribute__((weak)) // TODO that's ugly and I should fix it
+void greeter_signal_connect(LightDMGreeter* greeter) {
+    g_signal_connect(greeter, "authentication-complete", G_CALLBACK(authentication_complete_cb), NULL);
+    g_signal_connect(greeter, "show-prompt", G_CALLBACK(show_prompt_cb), NULL);
 }
 */
 import "C"
@@ -27,40 +26,21 @@ import (
 	"log"
 )
 
-//export test_cb
-func test_cb() {
-	log.Print("callback called!")
+//export authentication_complete_cb
+func authentication_complete_cb() {
+	log.Print("authentication cb called!")
 }
-/*
-seems to be the easiest way to create g_callback from Go
-but in this case, the preambule should only contains declaration, no definition
-either I can add __attribute__((weak)) to C definition so the linker ignore duplicated definitions
-or I can put the C function in a .c file and compile it first
-*/
 
-func signal_connect(object *C.LightDMGreeter, signal string, callback func()) {
-    /*
-	C.g_object_connect(greeter, "authentication-complete", nil, nil)
-	// unexpected type: ...
-	// => cannot use variadic C func with cgo
-	// => have to write a C wrapper
-
-	C.g_signal_connect(greeter, "authentication-complete", C.G_CALLBACK(test_cb), nil)
-	// "could not determine kind of name for C.g_signal_connect"
-    // => cgo cannot use/load C macro 
-    */
-
-    signal_name := C.CString(signal)
-    defer C.free(unsafe.Pointer(signal_name))
-
-    C.connect_wrapper((*C.GObject)(unsafe.Pointer(object)), signal_name, callback)
+//export show_prompt_cb
+func show_prompt_cb() {
+    log.Print("prompt cb called!")
 }
 
 func main() {
 	log.Print("lightdm-micro-greeter start up")
 
 	greeter := C.lightdm_greeter_new()
-    defer C.free(unsafe.Pointer(greeter))
+    //defer C.free(unsafe.Pointer(greeter)) // TODO invalid pointer ?
 	log.Print("greeter created")
 
 	if C.lightdm_greeter_connect_to_daemon_sync(greeter, nil) > 0 {
@@ -68,7 +48,12 @@ func main() {
 	}
 	log.Print("greeter connected to lightdm deamon")
 
+    C.greeter_signal_connect(greeter)
 
-    C.authenticate_signal_connect(greeter)
-    //signal_connect(greeter, "authentication-complete", test_cb)
+    username := C.CString("user")
+    defer C.free(unsafe.Pointer(username))
+    C.lightdm_greeter_authenticate(greeter, username, nil)
+
+    for true {
+    }
 }
