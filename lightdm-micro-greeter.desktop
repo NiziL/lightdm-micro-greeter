@@ -1,0 +1,5 @@
+[Desktop Entry]
+Name=LightDM Micro Greeter
+Comment=You should not use this
+Exec=lightdm-micro-greeter
+Type=Application
