@@ -1,6 +1,5 @@
-lightdm-micro-greeter
-
 # Binaries for programs and plugins
+lightdm-micro-greeter
 *.exe
 *.exe~
 *.dll
