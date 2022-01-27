@@ -1,18 +1,15 @@
 package main
 
-// TODO use pkg-config instead of flags to ensure portability
-//#cgo pkg-config: lightdm-gobject-1 (?)
-
 /*
 #cgo CFLAGS: -I/usr/include/lightdm-gobject-1 -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include
 #cgo LDFLAGS: -llightdm-gobject-1 -lgobject-2.0 -lglib-2.0
 
 #include "lightdm.h"
 
+void greeter_signal_connect(LightDMGreeter* greeter);
+
 extern void authentication_complete_cb(LightDMGreeter *greeter);
 extern void show_prompt_cb(LightDMGreeter *greeter, char *text, LightDMPromptType type);
-
-extern void greeter_signal_connect(LightDMGreeter* greeter);
 */
 import "C"
 
