@@ -43,11 +43,9 @@ func authentication_complete_cb(greeter *C.LightDMGreeter) {
 //export show_prompt_cb
 func show_prompt_cb(greeter *C.LightDMGreeter, text *C.char, prompt_type C.LightDMPromptType) {
 	log.Print("show_prompt_cb called!")
-
+	//go_text := C.GoString(text)
+	// go_text is the lightdm deamon answer, can be "password:"	or wrong login
 	// TODO let user give password
-	//c_password := C.CString(password)
-	//defer C.free(unsafe.Pointer(c_password))
-	//C.lightdm_greeter_respond(greeter, c_password, nil)
 }
 
 func main() {
@@ -77,14 +75,27 @@ func main() {
 	win.Connect("destroy", func() {
 		gtk.MainQuit()
 	})
+	display, _ := win.GetDisplay()
+	monitor, _ := display.GetPrimaryMonitor()
+	rect := monitor.GetGeometry()
+	win.Resize(rect.GetWidth(), rect.GetHeight())
 
-    grid, _ := gtk.GridNew()
-    grid.SetOrientation(gtk.ORIENTATION_VERTICAL)
+	grid, _ := gtk.GridNew()
+	grid.SetOrientation(gtk.ORIENTATION_VERTICAL)
 
 	l, _ := gtk.LabelNew("username")
 	grid.Add(l)
 
 	entry, _ := gtk.EntryNew()
+	grid.AttachNextTo(entry, l, gtk.POS_RIGHT, 1, 1)
+
+	l_pwd, _ := gtk.LabelNew("password")
+	grid.Add(l_pwd)
+
+	pwd_entry, _ := gtk.EntryNew()
+	pwd_entry.SetVisibility(false)
+	grid.AttachNextTo(pwd_entry, l_pwd, gtk.POS_RIGHT, 1, 1)
+
 	entry.Connect("activate", func() {
 		username, _ := entry.GetText()
 		c_username := C.CString(username)
@@ -92,23 +103,17 @@ func main() {
 		log.Print("starting authentication for ", username)
 		C.lightdm_greeter_authenticate(greeter, c_username, nil)
 	})
-    grid.AttachNextTo(entry, l, gtk.POS_RIGHT, 1, 1)
 
-	l_pwd, _ := gtk.LabelNew("password")
-	grid.Add(l_pwd)
-
-	pwd_entry, _ := gtk.EntryNew()
-    pwd_entry.SetVisibility(false)
 	pwd_entry.Connect("activate", func() {
 		pwd, _ := pwd_entry.GetText()
 		c_pwd := C.CString(pwd)
 		defer C.free(unsafe.Pointer(c_pwd))
-        log.Print("sending password")
+		log.Print("sending password")
 		C.lightdm_greeter_respond(greeter, c_pwd, nil)
 	})
-    grid.AttachNextTo(pwd_entry, l_pwd, gtk.POS_RIGHT, 1, 1)
-    
-    win.Add(grid)
+
+	win.Add(grid)
 	win.ShowAll()
+
 	gtk.Main()
 }
