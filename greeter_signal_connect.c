@@ -1,13 +1,10 @@
+#define connect(name, func) g_signal_connect(greeter, name, G_CALLBACK(func), NULL)
 #include "_cgo_export.h"
 
-void greeter_signal_connect(LightDMGreeter* greeter) {
-    g_signal_connect(greeter, 
-                     "authentication-complete", 
-                     G_CALLBACK(authentication_complete_cb), 
-                     NULL);
+extern void authentication_complete_cb(LightDMGreeter *greeter);
+extern void show_prompt_cb(LightDMGreeter *greeter, char *text, LightDMPromptType type);
 
-    g_signal_connect(greeter, 
-                     "show-prompt", 
-                     G_CALLBACK(show_prompt_cb), 
-                     NULL);
+void greeter_signal_connect(LightDMGreeter* greeter) {
+    connect("authentication-complete", authentication_complete_cb);
+    connect("show-prompt", show_prompt_cb);
 }
