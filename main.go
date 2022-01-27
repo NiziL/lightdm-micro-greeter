@@ -5,11 +5,7 @@ package main
 #cgo LDFLAGS: -llightdm-gobject-1 -lgobject-2.0 -lglib-2.0
 
 #include "lightdm.h"
-
-void greeter_signal_connect(LightDMGreeter* greeter);
-
-extern void authentication_complete_cb(LightDMGreeter *greeter);
-extern void show_prompt_cb(LightDMGreeter *greeter, char *text, LightDMPromptType type);
+#include "greeter_signal_connect.h"
 */
 import "C"
 
