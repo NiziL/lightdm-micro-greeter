@@ -19,38 +19,71 @@ import "C"
 import (
 	"log"
 	"unsafe"
+
+	"github.com/gotk3/gotk3/gtk"
 )
+
+// TODO I'd like to avoid this global var
+var waiting_pwd, waiting_resp bool
+var entry *gtk.Entry
+var label *gtk.Label
 
 //export authentication_complete_cb
 func authentication_complete_cb(greeter *C.LightDMGreeter) {
 	log.Print("authentication_complete_cb called!")
 
 	if C.lightdm_greeter_get_is_authenticated(greeter) == 0 {
-		log.Print("wrong password dumbass")
+		log.Print("wrong password")
+		waiting_pwd = false
 	} else {
 		C.lightdm_greeter_start_session_sync(greeter, nil, nil)
 	}
+	waiting_resp = false
 }
 
 //export show_prompt_cb
 func show_prompt_cb(greeter *C.LightDMGreeter, text *C.char, prompt_type C.LightDMPromptType) {
+	// text is the lightdm deamon answer, have seen nothing else than "password:"
 	log.Print("show_prompt_cb called!")
+	waiting_pwd = true
+}
 
-	// TODO let user give password
-	password := "password"
+// may I use this builder to avoid global var (at least entry and label) ?
+func create_entry_cb(greeter *C.LightDMGreeter) func() {
+	return func() {
+		input, _ := entry.GetText()
+		entry.SetText("")
 
-	c_password := C.CString(password)
-	C.lightdm_greeter_respond(greeter, c_password, nil)
+		c_input := C.CString(input)
+		defer C.free(unsafe.Pointer(c_input))
+
+		if waiting_pwd {
+			log.Print("pwd entered")
+			C.lightdm_greeter_respond(greeter, c_input, nil)
+			waiting_resp = true
+			label.SetText("username: ")
+			entry.SetVisibility(true)
+		} else if !waiting_resp {
+			log.Print("starting authentication for ", input)
+			C.lightdm_greeter_authenticate(greeter, c_input, nil)
+			label.SetText("password: ")
+			entry.SetVisibility(false)
+		}
+	}
 }
 
 func main() {
 	log.Print("lightdm-micro-greeter start up")
 
-	loop := C.g_main_loop_new(nil, 0)
-	// should i defer free loop ?
+	var err error
+
+	waiting_pwd = false
+	waiting_resp = false
 
 	greeter := C.lightdm_greeter_new()
-	//defer C.free(unsafe.Pointer(greeter)) // TODO fix invalid pointer at runtime, should I really free this ? Does glib free it for me ?
+	// TODO fix invalid pointer at runtime
+	// defer C.free(unsafe.Pointer(greeter))
+	// should I really free this ? Does glib free it for me ? should I use g_free ?
 	log.Print("greeter created")
 
 	if C.lightdm_greeter_connect_to_daemon_sync(greeter, nil) == 0 {
@@ -61,14 +94,34 @@ func main() {
 	C.greeter_signal_connect(greeter)
 	log.Print("greeter callbacks binded")
 
-	// TODO let user give username
-	username := "username"
+	gtk.Init(nil)
+	log.Print("gtk init")
 
-	c_username := C.CString(username)
-	defer C.free(unsafe.Pointer(c_username))
+	win, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
+	if err != nil {
+		log.Fatal("unable to create window:", err)
+	}
+	win.Connect("destroy", func() {
+		gtk.MainQuit()
+	})
+	display, err := win.GetDisplay()
+	monitor, err := display.GetPrimaryMonitor()
+	rect := monitor.GetGeometry()
+	win.Resize(rect.GetWidth(), rect.GetHeight())
 
-	C.lightdm_greeter_authenticate(greeter, c_username, nil)
-	log.Print("authentication started")
+	grid, err := gtk.GridNew()
+	grid.SetOrientation(gtk.ORIENTATION_VERTICAL)
 
-	C.g_main_loop_run(loop)
+	label, err = gtk.LabelNew("username:")
+	grid.Add(label)
+
+	entry, err = gtk.EntryNew()
+	grid.AttachNextTo(entry, label, gtk.POS_RIGHT, 1, 1)
+
+	entry.Connect("activate", create_entry_cb(greeter))
+
+	win.Add(grid)
+	win.ShowAll()
+
+	gtk.Main()
 }
