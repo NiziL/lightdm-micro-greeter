@@ -23,11 +23,14 @@ var label *gtk.Label
 
 //export authentication_complete_cb
 func authentication_complete_cb(greeter *C.LightDMGreeter) {
-	log.Print("authentication_complete_cb called!")
-
 	if C.lightdm_greeter_get_is_authenticated(greeter) == 0 {
-		log.Print("wrong password")
+		log.Print("[authentication_complete_cb] wrong password")
+		label.SetText("username:")
+		entry.SetVisibility(true)
+		entry.SetSensitive(true)
+		entry.GrabFocus()
 	} else {
+		log.Print("[authentication_complete_cb] starting session")
 		C.lightdm_greeter_start_session_sync(greeter, nil, nil)
 	}
 }
@@ -35,7 +38,7 @@ func authentication_complete_cb(greeter *C.LightDMGreeter) {
 //export show_prompt_cb
 func show_prompt_cb(greeter *C.LightDMGreeter, text *C.char, prompt_type C.LightDMPromptType) {
 	// text is the lightdm deamon answer, have seen nothing else than "password:"
-	log.Print("show_prompt_cb called!")
+	log.Print("[show_prompt_cb]")
 	txt := C.GoString(text)
 	label.SetText(txt)
 	if prompt_type == C.LIGHTDM_PROMPT_TYPE_SECRET {
@@ -43,6 +46,13 @@ func show_prompt_cb(greeter *C.LightDMGreeter, text *C.char, prompt_type C.Light
 	} else {
 		entry.SetVisibility(true)
 	}
+}
+
+//export show_message_cb
+func show_message_cb(greeter *C.LightDMGreeter, text *C.char, msg_type C.LightDMMessageType) {
+	log.Print("[show_message_cb]")
+	txt := C.GoString(text)
+	label.SetText(txt)
 }
 
 // may I use this builder to avoid global var (at least entry and label) ?
@@ -60,6 +70,7 @@ func create_entry_cb(greeter *C.LightDMGreeter) func() {
 		} else if C.lightdm_greeter_get_in_authentication(greeter) != 0 {
 			// give pwd
 			C.lightdm_greeter_respond(greeter, c_input, nil)
+			entry.SetSensitive(false)
 		} else {
 			// give username
 			C.lightdm_greeter_authenticate(greeter, c_input, nil)
@@ -76,22 +87,21 @@ func main() {
 	// TODO fix invalid pointer at runtime
 	// defer C.free(unsafe.Pointer(greeter))
 	// should I really free this ? Does glib free it for me ? should I use g_free ?
-	log.Print("greeter created")
 
 	if C.lightdm_greeter_connect_to_daemon_sync(greeter, nil) == 0 {
-		log.Fatal("Not sync to daemon !")
+		log.Fatal("greeter can't connect to daemon")
+	} else {
+		log.Print("greeter connected to lightdm deamon")
 	}
-	log.Print("greeter connected to lightdm deamon")
 
 	C.greeter_signal_connect(greeter)
-	log.Print("greeter callbacks binded")
 
 	gtk.Init(nil)
 	log.Print("gtk init")
 
 	win, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
 	if err != nil {
-		log.Fatal("unable to create window:", err)
+		log.Fatal("unable to create window", err)
 	}
 	win.Connect("destroy", func() {
 		gtk.MainQuit()
