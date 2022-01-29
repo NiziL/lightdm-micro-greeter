@@ -17,6 +17,12 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 )
 
+// TODO create a config file for this
+const N_CHAR_ENTRY int = 8
+const LABEL_MARGIN int = 5
+const WIDTH_RATIO float32 = 0.5
+const HEIGHT_RATIO float32 = 0.5
+
 // TODO I'd like to avoid these global vars
 var entry *gtk.Entry
 var label *gtk.Label
@@ -104,30 +110,45 @@ func main() {
 	rect := monitor.GetGeometry()
 	win.Resize(rect.GetWidth(), rect.GetHeight())
 
+	// simple fixed layout
+	layout, _ := gtk.FixedNew()
+	win.Add(layout)
+
+	// create a box for label and entry
+	box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, LABEL_MARGIN)
+	box.SetHAlign(gtk.ALIGN_CENTER)
+	box.SetVAlign(gtk.ALIGN_CENTER)
+
 	label, _ = gtk.LabelNew("username")
 	label.SetHAlign(gtk.ALIGN_CENTER)
+	label.SetVAlign(gtk.ALIGN_CENTER)
+	box.Add(label)
 
 	entry, _ = gtk.EntryNew()
 	entry.SetHAlign(gtk.ALIGN_CENTER)
+	entry.SetVAlign(gtk.ALIGN_CENTER)
+	entry.SetWidthChars(N_CHAR_ENTRY)
 	entry.Connect("activate", create_entry_cb(greeter))
-
-	box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 5)
-	box.Add(label)
 	box.Add(entry)
 
+	// set background image
 	bg, _ := gtk.ImageNewFromFile("/etc/lightdm/wallpaper.png")
-
-	offset_x := entry.GetAllocatedWidth() / 2
-	center_x := rect.GetWidth() / 2
-	offset_y := entry.GetAllocatedHeight() / 2
-	center_y := rect.GetHeight() / 2
-
-	layout, _ := gtk.FixedNew()
 	layout.Put(bg, 0, 0)
-	layout.Put(box, center_x-offset_x, center_y-offset_y)
 
-	win.Add(layout)
+	// set box
+	// TODO find a cleaner way to acheive this
+	// I have to put the box and render it before having access to its size
+	layout.Add(box)
 	win.ShowAll()
+	// now that size is known, center it
+	center_x := int(float32(rect.GetWidth()) * WIDTH_RATIO)
+	center_y := int(float32(rect.GetHeight()) * HEIGHT_RATIO)
+	offset_x := box.GetAllocatedWidth() / 2
+	offset_y := box.GetAllocatedWidth() / 2
+	// put box at its right place
+	layout.Remove(box)
+	layout.Put(box, center_x-offset_x, center_y-offset_y)
+	entry.GrabFocus()
 
 	log.Print("gtk start")
 	gtk.Main()
