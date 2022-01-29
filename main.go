@@ -25,7 +25,7 @@ var label *gtk.Label
 func authentication_complete_cb(greeter *C.LightDMGreeter) {
 	if C.lightdm_greeter_get_is_authenticated(greeter) == 0 {
 		log.Print("[authentication_complete_cb] wrong password")
-		label.SetText("username:")
+		label.SetText("username")
 		entry.SetVisibility(true)
 		entry.SetSensitive(true)
 		entry.GrabFocus()
@@ -37,10 +37,8 @@ func authentication_complete_cb(greeter *C.LightDMGreeter) {
 
 //export show_prompt_cb
 func show_prompt_cb(greeter *C.LightDMGreeter, text *C.char, prompt_type C.LightDMPromptType) {
-	// text is the lightdm deamon answer, have seen nothing else than "password:"
 	log.Print("[show_prompt_cb]")
-	txt := C.GoString(text)
-	label.SetText(txt)
+	label.SetText("password")
 	if prompt_type == C.LIGHTDM_PROMPT_TYPE_SECRET {
 		entry.SetVisibility(false)
 	} else {
@@ -48,6 +46,7 @@ func show_prompt_cb(greeter *C.LightDMGreeter, text *C.char, prompt_type C.Light
 	}
 }
 
+// TODO investigate lightdm server, do I really need this ?
 //export show_message_cb
 func show_message_cb(greeter *C.LightDMGreeter, text *C.char, msg_type C.LightDMMessageType) {
 	log.Print("[show_message_cb]")
@@ -80,9 +79,6 @@ func create_entry_cb(greeter *C.LightDMGreeter) func() {
 
 func main() {
 	log.Print("lightdm-micro-greeter start up")
-
-	var err error
-
 	greeter := C.lightdm_greeter_new()
 	// TODO fix invalid pointer at runtime
 	// defer C.free(unsafe.Pointer(greeter))
@@ -93,37 +89,46 @@ func main() {
 	} else {
 		log.Print("greeter connected to lightdm deamon")
 	}
-
 	C.greeter_signal_connect(greeter)
 
-	gtk.Init(nil)
 	log.Print("gtk init")
+	gtk.Init(nil)
 
-	win, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
-	if err != nil {
-		log.Fatal("unable to create window", err)
-	}
-	win.Connect("destroy", func() {
-		gtk.MainQuit()
-	})
-	display, err := win.GetDisplay()
-	monitor, err := display.GetPrimaryMonitor()
+	win, _ := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
+	win.Connect("destroy", gtk.MainQuit)
+
+	// get screen information to resize as full screen
+	// .Fullscreen() is not working here
+	display, _ := win.GetDisplay()
+	monitor, _ := display.GetPrimaryMonitor()
 	rect := monitor.GetGeometry()
 	win.Resize(rect.GetWidth(), rect.GetHeight())
 
-	grid, err := gtk.GridNew()
-	grid.SetOrientation(gtk.ORIENTATION_VERTICAL)
+	label, _ = gtk.LabelNew("username")
+	label.SetHAlign(gtk.ALIGN_CENTER)
 
-	label, err = gtk.LabelNew("username:")
-	grid.Add(label)
-
-	entry, err = gtk.EntryNew()
-	grid.AttachNextTo(entry, label, gtk.POS_RIGHT, 1, 1)
-
+	entry, _ = gtk.EntryNew()
+	entry.SetHAlign(gtk.ALIGN_CENTER)
 	entry.Connect("activate", create_entry_cb(greeter))
 
-	win.Add(grid)
+	box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 5)
+	box.Add(label)
+	box.Add(entry)
+
+	bg, _ := gtk.ImageNewFromFile("/etc/lightdm/wallpaper.png")
+
+	offset_x := entry.GetAllocatedWidth() / 2
+	center_x := rect.GetWidth() / 2
+	offset_y := entry.GetAllocatedHeight() / 2
+	center_y := rect.GetHeight() / 2
+
+	layout, _ := gtk.FixedNew()
+	layout.Put(bg, 0, 0)
+	layout.Put(box, center_x-offset_x, center_y-offset_y)
+
+	win.Add(layout)
 	win.ShowAll()
 
+	log.Print("gtk start")
 	gtk.Main()
 }
