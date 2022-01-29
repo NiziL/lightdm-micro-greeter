@@ -13,7 +13,7 @@ And the shitty UX experience starts right now !
 Only manual installation is provided, and I doubt it will easily work on your machine.
 
 Here's my main process on ArchLinux.
-You'll need the C shared libraries `lightdm-gobject-1`, `glib-2.0` and `gobject` installed. It should be the case after installing LightDM, but I can't tell for sure.
+You'll need the C shared libraries `lightdm-gobject-1`, `glib-2.0` and `gobject-2.0` installed. It should be the case after installing LightDM, but I can't tell for sure.
 ```bash
 git clone https://github.com/nizil/lightdm-micro-greeter
 cd lightdm-miro-greeter
