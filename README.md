@@ -10,7 +10,7 @@ Many thanks to Matt Fischer for [his blog post](http://www.mattfischer.com/blog/
 - :bug:
 
 ## Installation
- :rotating_light:shitty UX ahead :rotating_light:
+ :rotating_light: shitty UX ahead :rotating_light:
 
 Only manual installation is provided, and I doubt it will easily work on your machine.  
 You'll need the C shared libraries `lightdm-gobject-1`, `glib-2.0` and `gobject-2.0` installed. It should be the case after installing LightDM, but I can't tell for sure.  
