@@ -14,6 +14,7 @@ import (
 	"log"
 	"unsafe"
 
+	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
 )
 
@@ -22,10 +23,15 @@ const N_CHAR_ENTRY int = 8
 const LABEL_MARGIN int = 5
 const WIDTH_RATIO float32 = 0.5
 const HEIGHT_RATIO float32 = 0.5
+const BG_PATH string = "/etc/lightdm/wallpaper.png"
 
 // TODO I'd like to avoid these global vars
 var entry *gtk.Entry
 var label *gtk.Label
+
+/*****************************/
+/* Light DM Server Callbacks */
+/*****************************/
 
 //export authentication_complete_cb
 func authentication_complete_cb(greeter *C.LightDMGreeter) {
@@ -60,7 +66,8 @@ func show_message_cb(greeter *C.LightDMGreeter, text *C.char, msg_type C.LightDM
 	label.SetText(txt)
 }
 
-// may I use this builder to avoid global var (at least entry and label) ?
+/*****************************/
+
 func create_entry_cb(greeter *C.LightDMGreeter) func() {
 	return func() {
 		input, _ := entry.GetText()
@@ -131,8 +138,9 @@ func main() {
 	entry.Connect("activate", create_entry_cb(greeter))
 	box.Add(entry)
 
-	// set background image
-	bg, _ := gtk.ImageNewFromFile("/etc/lightdm/wallpaper.png")
+	// set background image, auto scaling while preserving aspect ratio
+	pixbuf, _ := gdk.PixbufNewFromFileAtSize(BG_PATH, rect.GetWidth(), rect.GetHeight())
+	bg, _ := gtk.ImageNewFromPixbuf(pixbuf)
 	layout.Put(bg, 0, 0)
 
 	// set box

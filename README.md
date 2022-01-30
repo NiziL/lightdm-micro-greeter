@@ -5,7 +5,7 @@ A minimalist LightDM greeter written in Go, powered by [gotk3](github.com/gotk3/
 - multi-user login
 - no user list 
 - only starts the default session
-- must have a file /etc/lightdm/wallpaper.png 
+- simple background image (must be /etc/lightdm/wallpaper.png) with auto scaling (while keeping aspect ratio, so white border can appear)
 - shitty UX
 
 ## Installation
@@ -31,13 +31,13 @@ If it works... Yay ! Don't forget to keep another greeter installed on your mach
 
 ## Backlog 
 - shutdown, reboot and so
+- random wallpaper from a directory
 - better UI/UX
     - HiDPI handling
     - error message feedback
-    - background auto scaling
 - config file
     - username autofill
     - entry size and location
-    - background file
-- user list 
-- sessions list
+    - background file or directory
+- user list (?)
+- sessions list (?)
