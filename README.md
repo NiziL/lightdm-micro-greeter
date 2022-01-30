@@ -2,8 +2,7 @@
 A minimalist LightDM greeter written in Go, powered by [gotk3](github.com/gotk3/gotk3)
 
 ## Features
-- multi-user login
-- no user list 
+- provide a default username or let you provide one 
 - only starts the default session
 - simple background image (must be /etc/lightdm/wallpaper.png) with auto scaling (while keeping aspect ratio, so white border can appear)
 - shitty UX

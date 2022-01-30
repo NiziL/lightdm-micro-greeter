@@ -19,11 +19,14 @@ import (
 )
 
 // TODO create a config file for this
+const USER_AUTOLOGIN string = ""
 const N_CHAR_ENTRY int = 8
 const LABEL_MARGIN int = 5
 const WIDTH_RATIO float32 = 0.5
 const HEIGHT_RATIO float32 = 0.5
 const BG_PATH string = "/etc/lightdm/wallpaper.png"
+
+var C_USERNAME = C.CString(USER_AUTOLOGIN)
 
 // TODO I'd like to avoid these global vars
 var entry *gtk.Entry
@@ -37,8 +40,12 @@ var label *gtk.Label
 func authentication_complete_cb(greeter *C.LightDMGreeter) {
 	if C.lightdm_greeter_get_is_authenticated(greeter) == 0 {
 		log.Print("[authentication_complete_cb] wrong password")
-		label.SetText("username")
-		entry.SetVisibility(true)
+		if USER_AUTOLOGIN != "" {
+			C.lightdm_greeter_authenticate(greeter, C_USERNAME, nil)
+		} else {
+			label.SetText("username")
+			entry.SetVisibility(true)
+		}
 		entry.SetSensitive(true)
 		entry.GrabFocus()
 	} else {
@@ -108,7 +115,10 @@ func main() {
 	gtk.Init(nil)
 
 	win, _ := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
-	win.Connect("destroy", gtk.MainQuit)
+	win.Connect("destroy", func() {
+		log.Print("destroy signal called: quitting gtk")
+		gtk.MainQuit()
+	})
 
 	// get screen information to resize as full screen
 	// .Fullscreen() is not working here
@@ -144,19 +154,24 @@ func main() {
 	layout.Put(bg, 0, 0)
 
 	// set box
-	// TODO find a cleaner way to acheive this
+	// TODO find a cleaner way to acheive this, might induce flickering
 	// I have to put the box and render it before having access to its size
 	layout.Add(box)
 	win.ShowAll()
-	// now that size is known, center it
+	// now that size is known, compute center
 	center_x := int(float32(rect.GetWidth()) * WIDTH_RATIO)
 	center_y := int(float32(rect.GetHeight()) * HEIGHT_RATIO)
 	offset_x := box.GetAllocatedWidth() / 2
 	offset_y := box.GetAllocatedWidth() / 2
-	// put box at its right place
+	// center box
 	layout.Remove(box)
 	layout.Put(box, center_x-offset_x, center_y-offset_y)
 	entry.GrabFocus()
+
+	// Starts autologin if provided
+	if USER_AUTOLOGIN != "" {
+		C.lightdm_greeter_authenticate(greeter, C_USERNAME, nil)
+	}
 
 	log.Print("gtk start")
 	gtk.Main()
