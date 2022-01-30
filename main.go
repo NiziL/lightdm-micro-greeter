@@ -11,28 +11,75 @@ void greeter_signal_connect(LightDMGreeter* greeter);
 import "C"
 
 import (
+	"encoding/json"
 	"log"
+	"os"
 	"unsafe"
 
+	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
 )
 
-// TODO create a config file for this
-const N_CHAR_ENTRY int = 8
-const LABEL_MARGIN int = 5
-const WIDTH_RATIO float32 = 0.5
-const HEIGHT_RATIO float32 = 0.5
+// CONSTANTES
+const BASE_PATH = "/etc/lightdm/lightdm-micro-greeter/"
+const CONFIG_FILE = BASE_PATH + "config.json"
 
-// TODO I'd like to avoid these global vars
+// GLOBAL VARS
+// TODO this is ulgy, can I avoid them ?
+var c_username *C.char = nil
 var entry *gtk.Entry
 var label *gtk.Label
+
+/**********************/
+/* JSON Configuration */
+/**********************/
+type Configuration struct {
+	Username  string
+	Wallpaper string
+	Entry     struct {
+		WidthChars     int
+		Margin         int
+		XLocationRatio float32
+		YLocationRatio float32
+	}
+}
+
+func load_config() (config Configuration) {
+	config.Username = ""
+	config.Wallpaper = ""
+	config.Entry.WidthChars = 10
+	config.Entry.Margin = 10
+	config.Entry.XLocationRatio = 0.5
+	config.Entry.YLocationRatio = 0.5
+
+	file, err := os.Open(CONFIG_FILE)
+	defer file.Close()
+	if err != nil {
+		log.Fatal("[load_config] Does /etc/lightdm/lightdm-micro-greeter/config.json exist ?")
+	}
+	decoder := json.NewDecoder(file)
+	err = decoder.Decode(&config)
+	if err != nil {
+		log.Fatal("[load_config] Does not look like a valid json syntax.")
+	}
+
+	return
+}
+
+/*****************************/
+/* Light DM Server Callbacks */
+/*****************************/
 
 //export authentication_complete_cb
 func authentication_complete_cb(greeter *C.LightDMGreeter) {
 	if C.lightdm_greeter_get_is_authenticated(greeter) == 0 {
 		log.Print("[authentication_complete_cb] wrong password")
-		label.SetText("username")
-		entry.SetVisibility(true)
+		if c_username != nil {
+			C.lightdm_greeter_authenticate(greeter, c_username, nil)
+		} else {
+			label.SetText("username")
+			entry.SetVisibility(true)
+		}
 		entry.SetSensitive(true)
 		entry.GrabFocus()
 	} else {
@@ -60,7 +107,8 @@ func show_message_cb(greeter *C.LightDMGreeter, text *C.char, msg_type C.LightDM
 	label.SetText(txt)
 }
 
-// may I use this builder to avoid global var (at least entry and label) ?
+/*****************************/
+
 func create_entry_cb(greeter *C.LightDMGreeter) func() {
 	return func() {
 		input, _ := entry.GetText()
@@ -85,11 +133,15 @@ func create_entry_cb(greeter *C.LightDMGreeter) func() {
 
 func main() {
 	log.Print("lightdm-micro-greeter start up")
+
+	// Reading configuration file
+	config := load_config()
+
+	// Connect to LightDM deamon
 	greeter := C.lightdm_greeter_new()
 	// TODO fix invalid pointer at runtime
 	// defer C.free(unsafe.Pointer(greeter))
 	// should I really free this ? Does glib free it for me ? should I use g_free ?
-
 	if C.lightdm_greeter_connect_to_daemon_sync(greeter, nil) == 0 {
 		log.Fatal("greeter can't connect to daemon")
 	} else {
@@ -97,11 +149,16 @@ func main() {
 	}
 	C.greeter_signal_connect(greeter)
 
+	// GTK
 	log.Print("gtk init")
 	gtk.Init(nil)
 
 	win, _ := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
-	win.Connect("destroy", gtk.MainQuit)
+	// seems useless, never called when session starts
+	win.Connect("destroy", func() {
+		log.Print("destroy signal called: quitting gtk")
+		gtk.MainQuit()
+	})
 
 	// get screen information to resize as full screen
 	// .Fullscreen() is not working here
@@ -115,7 +172,7 @@ func main() {
 	win.Add(layout)
 
 	// create a box for label and entry
-	box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, LABEL_MARGIN)
+	box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, config.Entry.Margin)
 	box.SetHAlign(gtk.ALIGN_CENTER)
 	box.SetVAlign(gtk.ALIGN_CENTER)
 
@@ -127,28 +184,38 @@ func main() {
 	entry, _ = gtk.EntryNew()
 	entry.SetHAlign(gtk.ALIGN_CENTER)
 	entry.SetVAlign(gtk.ALIGN_CENTER)
-	entry.SetWidthChars(N_CHAR_ENTRY)
+	entry.SetWidthChars(config.Entry.WidthChars)
 	entry.Connect("activate", create_entry_cb(greeter))
 	box.Add(entry)
 
-	// set background image
-	bg, _ := gtk.ImageNewFromFile("/etc/lightdm/wallpaper.png")
-	layout.Put(bg, 0, 0)
+	// set background image, auto scaling while preserving aspect ratio
+	if config.Wallpaper != "" {
+		pixbuf, _ := gdk.PixbufNewFromFileAtSize(BASE_PATH+config.Wallpaper, rect.GetWidth(), rect.GetHeight())
+		bg, _ := gtk.ImageNewFromPixbuf(pixbuf)
+		layout.Put(bg, 0, 0)
+	}
 
 	// set box
-	// TODO find a cleaner way to acheive this
+	// TODO find a cleaner way to acheive this, might induce flickering
 	// I have to put the box and render it before having access to its size
 	layout.Add(box)
 	win.ShowAll()
-	// now that size is known, center it
-	center_x := int(float32(rect.GetWidth()) * WIDTH_RATIO)
-	center_y := int(float32(rect.GetHeight()) * HEIGHT_RATIO)
+	// now that size is known, compute center
+	center_x := int(float32(rect.GetWidth()) * config.Entry.XLocationRatio)
+	center_y := int(float32(rect.GetHeight()) * config.Entry.YLocationRatio)
 	offset_x := box.GetAllocatedWidth() / 2
 	offset_y := box.GetAllocatedWidth() / 2
-	// put box at its right place
+	// center box
 	layout.Remove(box)
 	layout.Put(box, center_x-offset_x, center_y-offset_y)
 	entry.GrabFocus()
+
+	// Starts autologin if provided
+	if config.Username != "" {
+		c_username = C.CString(config.Username)
+		defer C.free(unsafe.Pointer(c_username))
+		C.lightdm_greeter_authenticate(greeter, c_username, nil)
+	}
 
 	log.Print("gtk start")
 	gtk.Main()
