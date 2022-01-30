@@ -115,6 +115,7 @@ func main() {
 	gtk.Init(nil)
 
 	win, _ := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
+	// seems useless, never called when session starts
 	win.Connect("destroy", func() {
 		log.Print("destroy signal called: quitting gtk")
 		gtk.MainQuit()
@@ -149,9 +150,11 @@ func main() {
 	box.Add(entry)
 
 	// set background image, auto scaling while preserving aspect ratio
-	pixbuf, _ := gdk.PixbufNewFromFileAtSize(BG_PATH, rect.GetWidth(), rect.GetHeight())
-	bg, _ := gtk.ImageNewFromPixbuf(pixbuf)
-	layout.Put(bg, 0, 0)
+	if BG_PATH != "" {
+		pixbuf, _ := gdk.PixbufNewFromFileAtSize(BG_PATH, rect.GetWidth(), rect.GetHeight())
+		bg, _ := gtk.ImageNewFromPixbuf(pixbuf)
+		layout.Put(bg, 0, 0)
+	}
 
 	// set box
 	// TODO find a cleaner way to acheive this, might induce flickering
