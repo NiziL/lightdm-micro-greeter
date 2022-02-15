@@ -1,12 +1,12 @@
 # lightdm-micro-greeter
-A minimalist LightDM greeter written in Go, powered by [gotk3](https://github.com/gotk3/gotk3).  
-Inspired by [lightdm-mini-greeter](https://github.com/prikhi/lightdm-mini-greeter).  
-Many thanks to Matt Fischer for [his blog post](http://www.mattfischer.com/blog/archives/5), such a nice quickstart after thinking "what about creating my own greeter ?".
+A minimalist LightDM greeter written in Go, powered by [gotk3](https://github.com/gotk3/gotk3) and inspired by [lightdm-mini-greeter](https://github.com/prikhi/lightdm-mini-greeter).  
+
+Many thanks to Matt Fischer for [his great blog post](http://www.mattfischer.com/blog/archives/5).
 
 ## Features
-- log in
+- log in (hopefully)
 - single-user or multi-user mode
-- wallpaper
+- wallpaper autoscaling on your primary monitor
 - :bug:
 
 ## Installation
@@ -58,11 +58,12 @@ All the configuration is handled within the `/etc/lightdm/lightdm-micro-greeter/
 | `Entry.YLocationRatio` | control entry y position |
 
 ## Backlog 
-- shutdown, reboot and so
-- random wallpaper from a directory
-- better wallpaper placement in case of different aspect ratio
-- hexcode in Wallpaper config to control background color
-- HiDPI handling (entry auto scaling)
-- error message feedback (wrong password, unknown user...)
-- user list (?)
-- sessions list (?)
+- [ ] shutdown, reboot and so
+- [ ] random wallpaper from a directory
+- [ ] better wallpaper placement in case of different aspect ratio
+- [ ] better handling of multihead setup
+- [ ] hexcode in Wallpaper config to control background color
+- [ ] HiDPI handling (entry auto scaling)
+- [ ] error message feedback (wrong password, unknown user...)
+- [ ] user list (?)
+- [ ] sessions list (?)
