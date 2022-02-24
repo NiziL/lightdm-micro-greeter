@@ -1,8 +1,7 @@
 package main
 
 /*
-#cgo CFLAGS: -I/usr/include/lightdm-gobject-1 -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include
-#cgo LDFLAGS: -llightdm-gobject-1 -lgobject-2.0 -lglib-2.0
+#cgo pkg-config: liblightdm-gobject-1 gobject-2.0
 
 #include "lightdm.h"
 
@@ -20,7 +19,7 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 )
 
-// CONSTANTES
+// CONSTANTS
 const BASE_PATH = "/etc/lightdm/lightdm-micro-greeter/"
 const CONFIG_FILE = BASE_PATH + "config.json"
 
@@ -107,7 +106,9 @@ func show_message_cb(greeter *C.LightDMGreeter, text *C.char, msg_type C.LightDM
 	label.SetText(txt)
 }
 
-/*****************************/
+/*****************/
+/* GTK Callbacks */
+/*****************/
 
 func create_entry_cb(greeter *C.LightDMGreeter) func() {
 	return func() {
