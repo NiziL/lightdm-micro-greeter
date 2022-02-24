@@ -6,7 +6,9 @@ Many thanks to Matt Fischer for [his great blog post](http://www.mattfischer.com
 ## Features
 - log in (hopefully)
 - single-user or multi-user mode
-- wallpaper autoscaling on your primary monitor
+- wallpaper
+    - autoscaling on your primary monitor
+    - random selection from a directory
 - :bug:
 
 ## Installation
@@ -26,7 +28,7 @@ sudo mkdir /etc/lightdm/lightdm-micro-greeter
 sudo cp data/config.json /etc/lightdm/lightdm-micro-greeter/
 ```
 
-Alternatively, you could use `go install github.com/nizil/lightdm-micro-greeter@latest` to get the executable, but you'll have to put `GOBIN` in your path and still add the `.desktop` file to `/usr/share/xgreeters`.
+Alternatively, you could use `go install github.com/nizil/lightdm-micro-greeter@latest` to get the executable, but you'll have to put `GOBIN` in your path. Do not forget to add the `.desktop` file to `/usr/share/xgreeters` and the config file to `/etc/lightdm/lightdm-micro-greeter`.
 
 Then, ensure LightDM is using this greeter (`greeter-session=lightdm-micro-greeter` in `/etc/lightdm/lightdm.conf`) and restart LightDM (`systemctl restart lightdm`).
 
@@ -54,15 +56,20 @@ All the configuration is handled within the `/etc/lightdm/lightdm-micro-greeter/
 | Parameters | Effect |
 |------------|--------|
 | `Username` | keep empty for multi-user mode, providing an username will switch to single-user. |
-| `Wallpaper` | path to an image, `/etc/lightdm/lightdm-micro-greeter/` will be prepended. |
+| `Wallpaper` | path to an image or a directory, `/etc/lightdm/lightdm-micro-greeter/` will be prepended. |
 | `Entry.WidthChars` | entry width in chars. |
 | `Entry.Margin` | margin between label and entry in pixel. |
 | `Entry.XLocationRatio ` | control entry x position |
 | `Entry.YLocationRatio` | control entry y position |
 
+### Tips & Tricks
+
+- If `Wallpaper` is a directory, it must only contain images, as the greeter will randomly chose a file from this directory. 
+ 
+
 ## Backlog 
 - [ ] shutdown, reboot and so
-- [ ] random wallpaper from a directory
+- [x] random wallpaper from a directory
 - [ ] better wallpaper placement in case of different aspect ratio
 - [ ] better handling of multihead setup
 - [ ] hexcode in Wallpaper config to control background color
