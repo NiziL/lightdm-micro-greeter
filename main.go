@@ -1,8 +1,7 @@
 package main
 
 /*
-#cgo CFLAGS: -I/usr/include/lightdm-gobject-1 -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include
-#cgo LDFLAGS: -llightdm-gobject-1 -lgobject-2.0 -lglib-2.0
+#cgo pkg-config: liblightdm-gobject-1 gobject-2.0
 
 #include "lightdm.h"
 
@@ -13,14 +12,16 @@ import "C"
 import (
 	"encoding/json"
 	"log"
+	"math/rand"
 	"os"
+	"time"
 	"unsafe"
 
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
 )
 
-// CONSTANTES
+// CONSTANTS
 const BASE_PATH = "/etc/lightdm/lightdm-micro-greeter/"
 const CONFIG_FILE = BASE_PATH + "config.json"
 
@@ -53,10 +54,11 @@ func load_config() (config Configuration) {
 	config.Entry.YLocationRatio = 0.5
 
 	file, err := os.Open(CONFIG_FILE)
-	defer file.Close()
 	if err != nil {
 		log.Fatal("[load_config] Does /etc/lightdm/lightdm-micro-greeter/config.json exist ?")
 	}
+	defer file.Close()
+
 	decoder := json.NewDecoder(file)
 	err = decoder.Decode(&config)
 	if err != nil {
@@ -107,7 +109,9 @@ func show_message_cb(greeter *C.LightDMGreeter, text *C.char, msg_type C.LightDM
 	label.SetText(txt)
 }
 
-/*****************************/
+/*****************/
+/* GTK Callbacks */
+/*****************/
 
 func create_entry_cb(greeter *C.LightDMGreeter) func() {
 	return func() {
@@ -190,7 +194,16 @@ func main() {
 
 	// set background image, auto scaling while preserving aspect ratio
 	if config.Wallpaper != "" {
-		pixbuf, _ := gdk.PixbufNewFromFileAtSize(BASE_PATH+config.Wallpaper, rect.GetWidth(), rect.GetHeight())
+		filename := BASE_PATH + config.Wallpaper
+
+		filestat, _ := os.Stat(filename)
+		if filestat.IsDir() {
+			files, _ := os.ReadDir(filename)
+			rand.Seed(time.Now().UnixNano())
+			filename += files[rand.Intn(len(files))].Name()
+		}
+		log.Print("Loading file " + filename)
+		pixbuf, _ := gdk.PixbufNewFromFileAtSize(filename, rect.GetWidth(), rect.GetHeight())
 		bg, _ := gtk.ImageNewFromPixbuf(pixbuf)
 		layout.Put(bg, 0, 0)
 	}
