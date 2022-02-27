@@ -13,7 +13,7 @@ Many thanks to Matt Fischer for [his great blog post](http://www.mattfischer.com
     - autoscaling on your primary monitor
     - random selection from a directory
 
-##### Backlog
+#### Backlog
 
 - [ ] shutdown, reboot and so
 - [x] random wallpaper from a directory
@@ -29,32 +29,30 @@ Many thanks to Matt Fischer for [his great blog post](http://www.mattfischer.com
 
 ### Package manager
 
-:rotating_light: Only manual installation is provided for now. :rotating_light:  
+:rotating_light: Only manual installation is provided for now :rotating_light:  
 Any help to package lightdm-micro-greeter for your favorite distribution is greatly appreciated ! 
 
 ### Manual 
 
-In the futur command lines, we'll use the usual `$` notation for command run as an user, and `#` for command run as root.
-
-##### Requirements 
+#### Requirements 
 
 You need the C shared libraries lightdm-gobject-1, gobject-2.0 and glib-2.0. They might be shipped with LightDM, but I can't tell for sure. Depending on your distro, you might have to install some `-dev` or `-devel` packages.
 
 Obviously, you also need [Go](https://go.dev/doc/install).
 
-##### Get the binary
+#### Get the binary
 
 ```bash
-$ go install github.com/nizil/lightdm-micro-greeter@latest
+go install github.com/nizil/lightdm-micro-greeter@latest
 ```
 or 
 ```bash
-$ git clone github.com/nizil/lightdm-micro-greeter
-$ cd lightdm-micro-greeter
-$ go build
+git clone github.com/nizil/lightdm-micro-greeter
+cd lightdm-micro-greeter
+go build
 ```
 
-##### Setup the greeter
+#### Setup the greeter
 
 Now, you have to tell LightDM to use this greeter, and this is done in two simples steps:
 - Create a [desktop entry](https://wiki.archlinux.org/title/desktop_entries) at `/usr/share/xgreeters` which execute `lightdm-micro-greeter`. 
@@ -62,16 +60,15 @@ Now, you have to tell LightDM to use this greeter, and this is done in two simpl
 
 If `lightdm-micro-greeter` binary is accessible from your `PATH`, you could use [the desktop file](https://github.com/NiziL/lightdm-micro-greeter/blob/main/data/lightdm-micro-greeter.desktop) in the data directory and set `greeter-session=lightdm-micro-greeter`.
 
-If you've got the binary using a `git clone`/`go build`, you could just run the following commands as root.
+If you've got the binary using a `git clone`/`go build`, you could just run the following commands **as root**.
 ```bash
-# cp lightdm-micro-greeter /usr/bin
-# mkdir /etc/lightdm/lightdm-micro-greeter
-# cp lightdm-micro-greeter /usr/bin
-# cp data/lightdm-micro-greeter.desktop /usr/share/xgreeters/
-# cp data/config.json /etc/lightdm/lightdm-micro-greeter/
-# nano /etc/lightdm/lightdm.confg
+cp lightdm-micro-greeter /usr/bin
+mkdir /etc/lightdm/lightdm-micro-greeter
+cp lightdm-micro-greeter /usr/bin
+cp data/lightdm-micro-greeter.desktop /usr/share/xgreeters/
+cp data/config.json /etc/lightdm/lightdm-micro-greeter/
+sed -i "s/^greeter-session=.*$/greeter-session=lightdm-micro-greeter/g /etc/lightdm/lightdm.conf"
 ```
-
 
 ## Configuration
 
