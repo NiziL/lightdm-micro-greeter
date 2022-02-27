@@ -76,6 +76,7 @@ func createEntryCallback(greeter *C.LightDMGreeter) func() {
 
 		if C.lightdm_greeter_get_is_authenticated(greeter) != 0 {
 			// session starting
+			// looks like dead code, not printed in log
 			label.SetText("session starts...")
 			log.Print("[entry_callback] authentication ok")
 		} else if C.lightdm_greeter_get_in_authentication(greeter) != 0 {
@@ -108,12 +109,8 @@ func initGreeter() (greeter *C.LightDMGreeter, err error) {
 }
 
 func main() {
-	log.Print("[main] start up")
-
-	// Reading configuration file
 	config, _ := loadConfig(CONFIG_FILE)
 
-	// Start greeter
 	greeter, err := initGreeter()
 	if err != nil {
 		log.Fatalf("[start_greeter] fatal error: %s", err)
@@ -121,11 +118,12 @@ func main() {
 
 	initUI(config, createEntryCallback(greeter))
 
-	// Starts autologin if provided
+	// Autologin
 	if config.Username != "" {
 		c_username = C.CString(config.Username)
 		defer C.free(unsafe.Pointer(c_username))
 		C.lightdm_greeter_authenticate(greeter, c_username, nil)
 	}
 
+	startUI()
 }

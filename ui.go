@@ -40,7 +40,6 @@ func loadWallpaper(fpath string, width, height int) (bg *gtk.Image, err error) {
 }
 
 func initUI(config Configuration, entryCallback func()) {
-	log.Print("[init_ui] gtk init")
 	gtk.Init(nil)
 
 	// fullscreen window
@@ -80,8 +79,9 @@ func initUI(config Configuration, entryCallback func()) {
 	layout.Put(box, center_x-offset_x, center_y-offset_y)
 	// set cursor in entry
 	entry.GrabFocus()
+}
 
-	log.Print("[init_ui] gtk start main loop")
+func startUI() {
 	gtk.Main()
 }
 
@@ -90,7 +90,7 @@ func initWindow() (window *gtk.Window, width, height int, err error) {
 	if err != nil {
 		return
 	}
-	// seems useless, never called when session starts
+	// looks like dead code, not printed in log
 	window.Connect("destroy", func() {
 		log.Print("destroy signal called: quitting gtk")
 		gtk.MainQuit()
