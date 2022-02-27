@@ -11,6 +11,7 @@ import "C"
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"math/rand"
 	"os"
@@ -45,7 +46,7 @@ type Configuration struct {
 	}
 }
 
-func load_config() (config Configuration) {
+func loadConfig() (config Configuration, err error) {
 	config.Username = ""
 	config.Wallpaper = ""
 	config.Entry.WidthChars = 10
@@ -55,14 +56,15 @@ func load_config() (config Configuration) {
 
 	file, err := os.Open(CONFIG_FILE)
 	if err != nil {
-		log.Fatal("[load_config] Does /etc/lightdm/lightdm-micro-greeter/config.json exist ?")
+		log.Print("[load_config] error opening " + CONFIG_FILE)
+		return
 	}
 	defer file.Close()
 
 	decoder := json.NewDecoder(file)
 	err = decoder.Decode(&config)
 	if err != nil {
-		log.Fatal("[load_config] Does not look like a valid json syntax.")
+		log.Print("[load_config] " + CONFIG_FILE + "is not a valid JSON")
 	}
 
 	return
@@ -101,19 +103,11 @@ func show_prompt_cb(greeter *C.LightDMGreeter, text *C.char, prompt_type C.Light
 	}
 }
 
-// TODO investigate lightdm server, do I really need this ?
-//export show_message_cb
-func show_message_cb(greeter *C.LightDMGreeter, text *C.char, msg_type C.LightDMMessageType) {
-	log.Print("[show_message_cb]")
-	txt := C.GoString(text)
-	label.SetText(txt)
-}
+/*************/
+/* Utilities */
+/*************/
 
-/*****************/
-/* GTK Callbacks */
-/*****************/
-
-func create_entry_cb(greeter *C.LightDMGreeter) func() {
+func createEntryCallback(greeter *C.LightDMGreeter) func() {
 	return func() {
 		input, _ := entry.GetText()
 		entry.SetText("")
@@ -123,104 +117,168 @@ func create_entry_cb(greeter *C.LightDMGreeter) func() {
 
 		if C.lightdm_greeter_get_is_authenticated(greeter) != 0 {
 			// start_session ?
-			log.Print("authentication ok")
+			log.Print("[entry_callback] authentication ok")
 		} else if C.lightdm_greeter_get_in_authentication(greeter) != 0 {
 			// give pwd
+			log.Print("[entry_callback] giving pwd")
 			C.lightdm_greeter_respond(greeter, c_input, nil)
 			entry.SetSensitive(false)
 		} else {
 			// give username
+			log.Print("[entry_callback] giving username")
 			C.lightdm_greeter_authenticate(greeter, c_input, nil)
 		}
 	}
 }
 
-func main() {
-	log.Print("lightdm-micro-greeter start up")
+func loadWallpaper(fpath string, width, height int) (bg *gtk.Image, err error) {
+	filestat, err := os.Stat(fpath)
+	if err != nil {
+		log.Print("[load_wallpaper] error opening " + fpath)
+		return
+	}
+	if filestat.IsDir() {
+		files, _ := os.ReadDir(fpath)
+		rand.Seed(time.Now().UnixNano())
+		fpath += files[rand.Intn(len(files))].Name()
+		log.Print("[load_wallpaper] randomly picking " + fpath)
+	}
+	pixbuf, err := gdk.PixbufNewFromFileAtSize(fpath, width, height)
+	if err != nil {
+		log.Print("[load_wallpaper] error loading " + fpath)
+		return
+	}
+	bg, err = gtk.ImageNewFromPixbuf(pixbuf)
+	return
+}
 
-	// Reading configuration file
-	config := load_config()
-
-	// Connect to LightDM deamon
-	greeter := C.lightdm_greeter_new()
+func initGreeter() (greeter *C.LightDMGreeter, err error) {
+	greeter = C.lightdm_greeter_new()
 	// TODO fix invalid pointer at runtime
 	// defer C.free(unsafe.Pointer(greeter))
 	// should I really free this ? Does glib free it for me ? should I use g_free ?
 	if C.lightdm_greeter_connect_to_daemon_sync(greeter, nil) == 0 {
-		log.Fatal("greeter can't connect to daemon")
+		log.Print("[init_greeter] can't connect to LightDM deamon")
+		err = fmt.Errorf("can't connect to LightDM deamon")
 	} else {
-		log.Print("greeter connected to lightdm deamon")
+		log.Print("[init_greeter] greeter connected to LightDM deamon")
+		C.greeter_signal_connect(greeter)
 	}
-	C.greeter_signal_connect(greeter)
+	return
+}
 
-	// GTK
-	log.Print("gtk init")
-	gtk.Init(nil)
-
-	win, _ := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
+func initWindow() (window *gtk.Window, width, height int, err error) {
+	window, err = gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
+	if err != nil {
+		return
+	}
 	// seems useless, never called when session starts
-	win.Connect("destroy", func() {
+	window.Connect("destroy", func() {
 		log.Print("destroy signal called: quitting gtk")
 		gtk.MainQuit()
 	})
 
 	// get screen information to resize as full screen
 	// .Fullscreen() is not working here
-	display, _ := win.GetDisplay()
-	monitor, _ := display.GetPrimaryMonitor()
+	display, err := window.GetDisplay()
+	if err != nil {
+		return
+	}
+	monitor, err := display.GetPrimaryMonitor()
+	if err != nil {
+		return
+	}
 	rect := monitor.GetGeometry()
-	win.Resize(rect.GetWidth(), rect.GetHeight())
+	width = rect.GetWidth()
+	height = rect.GetHeight()
+
+	window.Resize(width, height)
+
+	return
+}
+
+func initEntryBox(margin, widthChars int, callback func()) (box *gtk.Box, err error) {
+	box, err = gtk.BoxNew(gtk.ORIENTATION_VERTICAL, margin)
+	if err != nil {
+		return
+	}
+	box.SetHAlign(gtk.ALIGN_CENTER)
+	box.SetVAlign(gtk.ALIGN_CENTER)
+
+	label, err = gtk.LabelNew("username")
+	if err != nil {
+		return
+	}
+	label.SetHAlign(gtk.ALIGN_CENTER)
+	label.SetVAlign(gtk.ALIGN_CENTER)
+	box.Add(label)
+
+	entry, err = gtk.EntryNew()
+	if err != nil {
+		return
+	}
+	entry.SetHAlign(gtk.ALIGN_CENTER)
+	entry.SetVAlign(gtk.ALIGN_CENTER)
+	entry.SetWidthChars(widthChars)
+	entry.Connect("activate", callback)
+	box.Add(entry)
+
+	return
+}
+
+func main() {
+	log.Print("[main] start up")
+
+	// Reading configuration file
+	config, _ := loadConfig()
+
+	// Start greeter
+	greeter, err := initGreeter()
+	if err != nil {
+		log.Fatalf("[start_greeter] fatal error: %s", err)
+	}
+
+	// Init GUI
+	log.Print("[main] gtk init")
+	gtk.Init(nil)
+
+	// fullscreen window
+	win, width, height, err := initWindow()
+	if err != nil {
+		log.Fatalf("[init_window] fatal error: %s", err)
+	}
 
 	// simple fixed layout
 	layout, _ := gtk.FixedNew()
 	win.Add(layout)
 
-	// create a box for label and entry
-	box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, config.Entry.Margin)
-	box.SetHAlign(gtk.ALIGN_CENTER)
-	box.SetVAlign(gtk.ALIGN_CENTER)
-
-	label, _ = gtk.LabelNew("username")
-	label.SetHAlign(gtk.ALIGN_CENTER)
-	label.SetVAlign(gtk.ALIGN_CENTER)
-	box.Add(label)
-
-	entry, _ = gtk.EntryNew()
-	entry.SetHAlign(gtk.ALIGN_CENTER)
-	entry.SetVAlign(gtk.ALIGN_CENTER)
-	entry.SetWidthChars(config.Entry.WidthChars)
-	entry.Connect("activate", create_entry_cb(greeter))
-	box.Add(entry)
-
 	// set background image, auto scaling while preserving aspect ratio
-	if config.Wallpaper != "" {
-		filename := BASE_PATH + config.Wallpaper
-
-		filestat, _ := os.Stat(filename)
-		if filestat.IsDir() {
-			files, _ := os.ReadDir(filename)
-			rand.Seed(time.Now().UnixNano())
-			filename += files[rand.Intn(len(files))].Name()
-		}
-		log.Print("Loading file " + filename)
-		pixbuf, _ := gdk.PixbufNewFromFileAtSize(filename, rect.GetWidth(), rect.GetHeight())
-		bg, _ := gtk.ImageNewFromPixbuf(pixbuf)
+	bg, err := loadWallpaper(BASE_PATH+config.Wallpaper, width, height)
+	if err != nil {
+		log.Print("[load_wallpaper] default white screen")
+	} else {
+		log.Print("[load_wallpaper] wallpaper loaded")
 		layout.Put(bg, 0, 0)
 	}
 
-	// set box
-	// TODO find a cleaner way to acheive this, might induce flickering
-	// I have to put the box and render it before having access to its size
+	// init entry box
+	box, _ := initEntryBox(
+		config.Entry.Margin, config.Entry.WidthChars,
+		createEntryCallback(greeter))
+	/* TODO find a cleaner way to acheive this, might induce flickering
+	   for now, I have to put the box and render it before having access to its size */
+	// set box centered
 	layout.Add(box)
 	win.ShowAll()
 	// now that size is known, compute center
-	center_x := int(float32(rect.GetWidth()) * config.Entry.XLocationRatio)
-	center_y := int(float32(rect.GetHeight()) * config.Entry.YLocationRatio)
+	center_x := int(float32(width) * config.Entry.XLocationRatio)
+	center_y := int(float32(height) * config.Entry.YLocationRatio)
 	offset_x := box.GetAllocatedWidth() / 2
 	offset_y := box.GetAllocatedWidth() / 2
 	// center box
 	layout.Remove(box)
 	layout.Put(box, center_x-offset_x, center_y-offset_y)
+	// set cursor in entry
 	entry.GrabFocus()
 
 	// Starts autologin if provided
@@ -230,6 +288,6 @@ func main() {
 		C.lightdm_greeter_authenticate(greeter, c_username, nil)
 	}
 
-	log.Print("gtk start")
+	log.Print("[main] gtk start main loop")
 	gtk.Main()
 }
