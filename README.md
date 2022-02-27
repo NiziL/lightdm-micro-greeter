@@ -101,3 +101,9 @@ If the file does not exist, the following configuration will be used:
 - If `Wallpaper` is a directory, it must only contain images, as the greeter will randomly chose a file from this directory. 
 - LightDM must have access to `Wallpaper` (using `/etc/lightdm` is pretty convenient).
 - (`XLocationRatio`, `YLocationRatio`) define the location of the entry box center. `(0, 0)` is the top left corner, `(1, 1)` is the bottom right corner and `(0.5, 0.5)` the screen center.
+
+## Dev notes
+
+I had to rely on C macro `G_CALLBACK` to bind the LightDM server callbacks, which is unfortunately not accessible through the `import "C"` statement.  
+To bind a go function to glib events, I've exported few go functions using `//export` statement and binded them with `G_CALLBACK` from C code `greeter_signal_connect.c`.  
+With this architecture, it has been pretty difficult to avoid the use of global vars to carry information from the UI to these callbacks. If you have any idea how to make a cleaner code here, open a ticket, I'll be happy to discuss about it :)
