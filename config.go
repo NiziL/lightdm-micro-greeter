@@ -18,6 +18,7 @@ type Configuration struct {
 }
 
 func loadConfig(fpath string) (config Configuration, err error) {
+	// default configuration
 	config.Username = ""
 	config.Wallpaper = ""
 	config.Entry.WidthChars = 10
@@ -25,6 +26,7 @@ func loadConfig(fpath string) (config Configuration, err error) {
 	config.Entry.XLocationRatio = 0.5
 	config.Entry.YLocationRatio = 0.5
 
+	// loading conf file
 	file, err := os.Open(fpath)
 	if err != nil {
 		log.Print("[load_config] error opening " + CONFIG_FILE)

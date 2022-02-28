@@ -10,10 +10,6 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 )
 
-/***************/
-/* GLOBAL VARS */
-/***************/
-
 // gtk widget needed by exported function
 var entry *gtk.Entry = nil
 var label *gtk.Label = nil
@@ -39,17 +35,20 @@ func loadWallpaper(fpath string, width, height int) (bg *gtk.Image, err error) {
 	return
 }
 
-func initUI(config Configuration, entryCallback func()) {
+func initUI(config Configuration, entryCallback func()) (err error) {
 	gtk.Init(nil)
 
 	// fullscreen window
 	win, width, height, err := initWindow()
 	if err != nil {
-		log.Fatalf("[init_window] fatal error: %s", err)
+		return
 	}
 
 	// simple fixed layout
-	layout, _ := gtk.FixedNew()
+	layout, err := gtk.FixedNew()
+	if err != nil {
+		return
+	}
 	win.Add(layout)
 
 	// set background image, auto scaling while preserving aspect ratio
@@ -62,7 +61,10 @@ func initUI(config Configuration, entryCallback func()) {
 	}
 
 	// init entry box
-	box, _ := initEntryBox(config.Entry.Margin, config.Entry.WidthChars, entryCallback)
+	box, err := initEntryBox(config.Entry.Margin, config.Entry.WidthChars, entryCallback)
+	if err != nil {
+		return
+	}
 
 	/* TODO find a cleaner way to acheive this, might induce flickering
 	   for now, I have to put the box and render it before having access to its size */
@@ -79,10 +81,11 @@ func initUI(config Configuration, entryCallback func()) {
 	layout.Put(box, center_x-offset_x, center_y-offset_y)
 	// set cursor in entry
 	entry.GrabFocus()
-}
 
-func startUI() {
+	// start gtk main loop
 	gtk.Main()
+
+	return
 }
 
 func initWindow() (window *gtk.Window, width, height int, err error) {

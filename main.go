@@ -96,7 +96,7 @@ func createEntryCallback(greeter *C.LightDMGreeter) func() {
 /* lightdm-micro-greeter */
 /*************************/
 
-func initGreeter() (greeter *C.LightDMGreeter, err error) {
+func initGreeter(config Configuration) (greeter *C.LightDMGreeter, err error) {
 	greeter = C.lightdm_greeter_new()
 	if C.lightdm_greeter_connect_to_daemon_sync(greeter, nil) == 0 {
 		log.Print("[init_greeter] can't connect to LightDM deamon")
@@ -105,18 +105,6 @@ func initGreeter() (greeter *C.LightDMGreeter, err error) {
 		log.Print("[init_greeter] greeter connected to LightDM deamon")
 		C.greeter_signal_connect(greeter)
 	}
-	return
-}
-
-func main() {
-	config, _ := loadConfig(CONFIG_FILE)
-
-	greeter, err := initGreeter()
-	if err != nil {
-		log.Fatalf("[start_greeter] fatal error: %s", err)
-	}
-
-	initUI(config, createEntryCallback(greeter))
 
 	// Autologin
 	if config.Username != "" {
@@ -125,5 +113,22 @@ func main() {
 		C.lightdm_greeter_authenticate(greeter, c_username, nil)
 	}
 
-	startUI()
+	return
+}
+
+func main() {
+	config, err := loadConfig(CONFIG_FILE)
+	if err != nil {
+		log.Printf("[load_config] fallback on default configuration (%s)", err)
+	}
+
+	greeter, err := initGreeter(config)
+	if err != nil {
+		log.Fatalf("[start_greeter] fatal error: %s", err)
+	}
+
+	err = initUI(config, createEntryCallback(greeter))
+	if err != nil {
+		log.Fatalf("[init_ui] fatal error: %s", err)
+	}
 }
