@@ -102,6 +102,7 @@ func (app *AppUI) Init(config Configuration) (err error) {
 		layout.Put(bg, 0, 0)
 	}
 	layout.Put(box, center_x-offset_x, center_y-offset_y)
+	window.ShowAll()
 
 	return
 }
