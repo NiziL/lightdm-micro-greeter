@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"os"
 )
 
@@ -29,16 +28,12 @@ func loadConfig(fpath string) (config Configuration, err error) {
 	// loading conf file
 	file, err := os.Open(fpath)
 	if err != nil {
-		log.Print("[load_config] error opening " + CONFIG_FILE)
 		return
 	}
 	defer file.Close()
 
 	decoder := json.NewDecoder(file)
 	err = decoder.Decode(&config)
-	if err != nil {
-		log.Print("[load_config] " + CONFIG_FILE + "is not a valid JSON")
-	}
 
 	return
 }

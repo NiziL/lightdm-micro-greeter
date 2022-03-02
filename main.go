@@ -26,7 +26,9 @@ const CONFIG_FILE = BASE_PATH + "config.json"
 /* GLOBAL VARS */
 /***************/
 
-// flag, nil in multi user mode
+var app = &AppUI{nil, nil}
+
+// flag : multi user mode ? nil : username
 var c_username *C.char = nil
 
 /*****************************/
@@ -38,13 +40,12 @@ func authentication_complete_cb(greeter *C.LightDMGreeter) {
 	if C.lightdm_greeter_get_is_authenticated(greeter) == 0 {
 		log.Print("[authentication_complete_cb] wrong password")
 		if c_username != nil {
+			// autologin
 			C.lightdm_greeter_authenticate(greeter, c_username, nil)
 		} else {
-			label.SetText("username")
-			entry.SetVisibility(true)
+			app.UsernameMode()
 		}
-		entry.SetSensitive(true)
-		entry.GrabFocus()
+		app.EnableEntry()
 	} else {
 		log.Print("[authentication_complete_cb] starting session")
 		C.lightdm_greeter_start_session_sync(greeter, nil, nil)
@@ -54,11 +55,10 @@ func authentication_complete_cb(greeter *C.LightDMGreeter) {
 //export show_prompt_cb
 func show_prompt_cb(greeter *C.LightDMGreeter, text *C.char, prompt_type C.LightDMPromptType) {
 	log.Print("[show_prompt_cb]")
-	label.SetText("password")
 	if prompt_type == C.LIGHTDM_PROMPT_TYPE_SECRET {
-		entry.SetVisibility(false)
+		app.PasswordMode()
 	} else {
-		entry.SetVisibility(true)
+		app.UsernameMode()
 	}
 }
 
@@ -68,22 +68,20 @@ func show_prompt_cb(greeter *C.LightDMGreeter, text *C.char, prompt_type C.Light
 
 func createEntryCallback(greeter *C.LightDMGreeter) func() {
 	return func() {
-		input, _ := entry.GetText()
-		entry.SetText("")
-
+		input, _ := app.PopText()
 		c_input := C.CString(input)
 		defer C.free(unsafe.Pointer(c_input))
 
 		if C.lightdm_greeter_get_is_authenticated(greeter) != 0 {
 			// session starting
 			// looks like dead code, not printed in log
-			label.SetText("session starts...")
+			app.label.SetText("session starts...")
 			log.Print("[entry_callback] authentication ok")
 		} else if C.lightdm_greeter_get_in_authentication(greeter) != 0 {
 			// give pwd
 			log.Print("[entry_callback] giving pwd")
 			C.lightdm_greeter_respond(greeter, c_input, nil)
-			entry.SetSensitive(false)
+			app.entry.SetSensitive(false)
 		} else {
 			// give username
 			log.Print("[entry_callback] giving username")
@@ -96,14 +94,37 @@ func createEntryCallback(greeter *C.LightDMGreeter) func() {
 /* lightdm-micro-greeter */
 /*************************/
 
-func initGreeter(config Configuration) (greeter *C.LightDMGreeter, err error) {
+func initGreeter(username string) (greeter *C.LightDMGreeter, err error) {
 	greeter = C.lightdm_greeter_new()
 	if C.lightdm_greeter_connect_to_daemon_sync(greeter, nil) == 0 {
-		log.Print("[init_greeter] can't connect to LightDM deamon")
 		err = fmt.Errorf("can't connect to LightDM deamon")
 	} else {
-		log.Print("[init_greeter] greeter connected to LightDM deamon")
 		C.greeter_signal_connect(greeter)
+	}
+
+	return
+}
+
+func main() {
+	config, err := loadConfig(CONFIG_FILE)
+	if err != nil {
+		fmt.Printf("[load_config] fallback on default configuration\n%s\n", err)
+	} else {
+		fmt.Printf("[load_config] configuration loaded from " + CONFIG_FILE)
+	}
+
+	err = app.Init(config)
+	if err != nil {
+		log.Fatalf("[init_ui] fatal error: %s", err)
+	} else {
+		fmt.Printf("[init_ui] ok")
+	}
+
+	greeter, err := initGreeter(config.Username)
+	if err != nil {
+		log.Fatalf("[init_greeter] fatal error: %s", err)
+	} else {
+		log.Printf("[init_greeter] greeter connected to LightDM deamon")
 	}
 
 	// Autologin
@@ -113,22 +134,6 @@ func initGreeter(config Configuration) (greeter *C.LightDMGreeter, err error) {
 		C.lightdm_greeter_authenticate(greeter, c_username, nil)
 	}
 
-	return
-}
-
-func main() {
-	config, err := loadConfig(CONFIG_FILE)
-	if err != nil {
-		log.Printf("[load_config] fallback on default configuration (%s)", err)
-	}
-
-	greeter, err := initGreeter(config)
-	if err != nil {
-		log.Fatalf("[start_greeter] fatal error: %s", err)
-	}
-
-	err = initUI(config, createEntryCallback(greeter))
-	if err != nil {
-		log.Fatalf("[init_ui] fatal error: %s", err)
-	}
+	log.Print("Starting greeter")
+	app.Start(createEntryCallback(greeter))
 }

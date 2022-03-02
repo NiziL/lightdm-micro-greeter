@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"math/rand"
 	"os"
 	"time"
@@ -10,92 +10,21 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 )
 
-// gtk widget needed by exported function
-var entry *gtk.Entry = nil
-var label *gtk.Label = nil
-
-func loadWallpaper(fpath string, width, height int) (bg *gtk.Image, err error) {
-	filestat, err := os.Stat(fpath)
-	if err != nil {
-		log.Print("[load_wallpaper] error opening " + fpath)
-		return
-	}
-	if filestat.IsDir() {
-		files, _ := os.ReadDir(fpath)
-		rand.Seed(time.Now().UnixNano())
-		fpath += files[rand.Intn(len(files))].Name()
-		log.Print("[load_wallpaper] randomly picking " + fpath)
-	}
-	pixbuf, err := gdk.PixbufNewFromFileAtSize(fpath, width, height)
-	if err != nil {
-		log.Print("[load_wallpaper] error loading " + fpath)
-		return
-	}
-	bg, err = gtk.ImageNewFromPixbuf(pixbuf)
-	return
+type AppUI struct {
+	entry *gtk.Entry
+	label *gtk.Label
 }
 
-func initUI(config Configuration, entryCallback func()) (err error) {
+func (app *AppUI) Init(config Configuration) (err error) {
 	gtk.Init(nil)
 
 	// fullscreen window
-	win, width, height, err := initWindow()
+	window, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
 	if err != nil {
 		return
 	}
-
-	// simple fixed layout
-	layout, err := gtk.FixedNew()
-	if err != nil {
-		return
-	}
-	win.Add(layout)
-
-	// set background image, auto scaling while preserving aspect ratio
-	bg, err := loadWallpaper(BASE_PATH+config.Wallpaper, width, height)
-	if err != nil {
-		log.Print("[load_wallpaper] default white screen")
-	} else {
-		log.Print("[load_wallpaper] wallpaper loaded")
-		layout.Put(bg, 0, 0)
-	}
-
-	// init entry box
-	box, err := initEntryBox(config.Entry.Margin, config.Entry.WidthChars, entryCallback)
-	if err != nil {
-		return
-	}
-
-	/* TODO find a cleaner way to acheive this, might induce flickering
-	   for now, I have to put the box and render it before having access to its size */
-	// set box centered
-	layout.Add(box)
-	win.ShowAll()
-	// now that size is known, compute center
-	center_x := int(float32(width) * config.Entry.XLocationRatio)
-	center_y := int(float32(height) * config.Entry.YLocationRatio)
-	offset_x := box.GetAllocatedWidth() / 2
-	offset_y := box.GetAllocatedWidth() / 2
-	// center box
-	layout.Remove(box)
-	layout.Put(box, center_x-offset_x, center_y-offset_y)
-	// set cursor in entry
-	entry.GrabFocus()
-
-	// start gtk main loop
-	gtk.Main()
-
-	return
-}
-
-func initWindow() (window *gtk.Window, width, height int, err error) {
-	window, err = gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
-	if err != nil {
-		return
-	}
-	// looks like dead code, not printed in log
+	// looks like dead code, never really called
 	window.Connect("destroy", func() {
-		log.Print("destroy signal called: quitting gtk")
 		gtk.MainQuit()
 	})
 
@@ -110,39 +39,119 @@ func initWindow() (window *gtk.Window, width, height int, err error) {
 		return
 	}
 	rect := monitor.GetGeometry()
-	width = rect.GetWidth()
-	height = rect.GetHeight()
+	width := rect.GetWidth()
+	height := rect.GetHeight()
 
 	window.Resize(width, height)
+	if err != nil {
+		return
+	}
 
-	return
-}
+	// simple fixed layout
+	layout, err := gtk.FixedNew()
+	if err != nil {
+		return
+	}
+	window.Add(layout)
 
-func initEntryBox(margin, widthChars int, callback func()) (box *gtk.Box, err error) {
-	box, err = gtk.BoxNew(gtk.ORIENTATION_VERTICAL, margin)
+	// init box for label and entry
+	box, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, config.Entry.Margin)
 	if err != nil {
 		return
 	}
 	box.SetHAlign(gtk.ALIGN_CENTER)
 	box.SetVAlign(gtk.ALIGN_CENTER)
 
-	label, err = gtk.LabelNew("username")
+	// init label
+	app.label, err = gtk.LabelNew("username")
 	if err != nil {
 		return
 	}
-	label.SetHAlign(gtk.ALIGN_CENTER)
-	label.SetVAlign(gtk.ALIGN_CENTER)
-	box.Add(label)
+	app.label.SetHAlign(gtk.ALIGN_CENTER)
+	app.label.SetVAlign(gtk.ALIGN_CENTER)
+	box.Add(app.label)
 
-	entry, err = gtk.EntryNew()
+	// init entry
+	app.entry, err = gtk.EntryNew()
 	if err != nil {
 		return
 	}
-	entry.SetHAlign(gtk.ALIGN_CENTER)
-	entry.SetVAlign(gtk.ALIGN_CENTER)
-	entry.SetWidthChars(widthChars)
-	entry.Connect("activate", callback)
-	box.Add(entry)
+	app.entry.SetHAlign(gtk.ALIGN_CENTER)
+	app.entry.SetVAlign(gtk.ALIGN_CENTER)
+	app.entry.SetWidthChars(config.Entry.WidthChars)
+	box.Add(app.entry)
 
+	// set box centered
+	// TODO find a cleaner way to acheive this, might induce flickering
+	// for now, I have to put the box and render it before having access to its size
+	layout.Add(box)
+	window.ShowAll()
+	// now that size is known, compute center
+	center_x := int(float32(width) * config.Entry.XLocationRatio)
+	center_y := int(float32(height) * config.Entry.YLocationRatio)
+	offset_x := box.GetAllocatedWidth() / 2
+	offset_y := box.GetAllocatedWidth() / 2
+	// center box
+	layout.Remove(box)
+
+	// set background image, auto scaling while preserving aspect ratio
+	bg, err := loadWallpaper(BASE_PATH+config.Wallpaper, width, height)
+	if err != nil {
+		err = fmt.Errorf("[load_wallpaper] error loading wallpaper \n(%s)", err)
+	} else {
+		layout.Put(bg, 0, 0)
+	}
+	layout.Put(box, center_x-offset_x, center_y-offset_y)
+
+	return
+}
+
+func (app *AppUI) Start(entryCallback func()) {
+	app.entry.Connect("activate", entryCallback)
+	gtk.Main()
+}
+
+func (app *AppUI) UsernameMode() {
+	app.label.SetText("username")
+	app.entry.SetVisibility(true)
+}
+
+func (app *AppUI) PasswordMode() {
+	app.label.SetText("password")
+	app.entry.SetVisibility(false)
+}
+
+func (app *AppUI) DisableEntry() {
+	app.entry.SetSensitive(false)
+}
+
+func (app *AppUI) EnableEntry() {
+	app.entry.SetSensitive(true)
+	app.entry.GrabFocus()
+}
+
+func (app *AppUI) PopText() (txt string, err error) {
+	txt, err = app.entry.GetText()
+	app.entry.SetText("")
+	return
+}
+
+func loadWallpaper(fpath string, width, height int) (bg *gtk.Image, err error) {
+	filestat, err := os.Stat(fpath)
+	if err != nil {
+		err = fmt.Errorf("[load_wallpaper] error opening %s \n(%s)", fpath, err)
+		return
+	}
+	if filestat.IsDir() {
+		files, _ := os.ReadDir(fpath)
+		rand.Seed(time.Now().UnixNano())
+		fpath += files[rand.Intn(len(files))].Name()
+	}
+	pixbuf, err := gdk.PixbufNewFromFileAtSize(fpath, width, height)
+	if err != nil {
+		err = fmt.Errorf("[load_wallpaper] error loading %s \n(%s)", fpath, err)
+		return
+	}
+	bg, err = gtk.ImageNewFromPixbuf(pixbuf)
 	return
 }
