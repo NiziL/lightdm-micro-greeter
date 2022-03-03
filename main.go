@@ -81,7 +81,7 @@ func createEntryCallback(greeter *C.LightDMGreeter) func() {
 			// give pwd
 			log.Print("[entry_callback] giving pwd")
 			C.lightdm_greeter_respond(greeter, c_input, nil)
-			app.entry.SetSensitive(false)
+			app.DisableEntry()
 		} else {
 			// give username
 			log.Print("[entry_callback] giving username")

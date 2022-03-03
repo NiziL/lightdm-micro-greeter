@@ -109,6 +109,7 @@ func (app *AppUI) Init(config Configuration) (err error) {
 
 func (app *AppUI) Start(entryCallback func()) {
 	app.entry.Connect("activate", entryCallback)
+	app.entry.GrabFocus()
 	gtk.Main()
 }
 
