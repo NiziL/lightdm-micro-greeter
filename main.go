@@ -10,63 +10,26 @@ void greeter_signal_connect(LightDMGreeter* greeter);
 import "C"
 
 import (
-	"encoding/json"
+	"fmt"
 	"log"
-	"math/rand"
-	"os"
-	"time"
 	"unsafe"
-
-	"github.com/gotk3/gotk3/gdk"
-	"github.com/gotk3/gotk3/gtk"
 )
 
-// CONSTANTS
+/*************/
+/* CONSTANTS */
+/*************/
+
 const BASE_PATH = "/etc/lightdm/lightdm-micro-greeter/"
 const CONFIG_FILE = BASE_PATH + "config.json"
 
-// GLOBAL VARS
-// TODO this is ulgy, can I avoid them ?
+/***************/
+/* GLOBAL VARS */
+/***************/
+
+var app = &AppUI{nil, nil}
+
+// flag : multi user mode ? nil : username
 var c_username *C.char = nil
-var entry *gtk.Entry
-var label *gtk.Label
-
-/**********************/
-/* JSON Configuration */
-/**********************/
-type Configuration struct {
-	Username  string
-	Wallpaper string
-	Entry     struct {
-		WidthChars     int
-		Margin         int
-		XLocationRatio float32
-		YLocationRatio float32
-	}
-}
-
-func load_config() (config Configuration) {
-	config.Username = ""
-	config.Wallpaper = ""
-	config.Entry.WidthChars = 10
-	config.Entry.Margin = 10
-	config.Entry.XLocationRatio = 0.5
-	config.Entry.YLocationRatio = 0.5
-
-	file, err := os.Open(CONFIG_FILE)
-	if err != nil {
-		log.Fatal("[load_config] Does /etc/lightdm/lightdm-micro-greeter/config.json exist ?")
-	}
-	defer file.Close()
-
-	decoder := json.NewDecoder(file)
-	err = decoder.Decode(&config)
-	if err != nil {
-		log.Fatal("[load_config] Does not look like a valid json syntax.")
-	}
-
-	return
-}
 
 /*****************************/
 /* Light DM Server Callbacks */
@@ -77,13 +40,12 @@ func authentication_complete_cb(greeter *C.LightDMGreeter) {
 	if C.lightdm_greeter_get_is_authenticated(greeter) == 0 {
 		log.Print("[authentication_complete_cb] wrong password")
 		if c_username != nil {
+			// autologin
 			C.lightdm_greeter_authenticate(greeter, c_username, nil)
 		} else {
-			label.SetText("username")
-			entry.SetVisibility(true)
+			app.UsernameMode()
 		}
-		entry.SetSensitive(true)
-		entry.GrabFocus()
+		app.EnableEntry()
 	} else {
 		log.Print("[authentication_complete_cb] starting session")
 		C.lightdm_greeter_start_session_sync(greeter, nil, nil)
@@ -93,143 +55,85 @@ func authentication_complete_cb(greeter *C.LightDMGreeter) {
 //export show_prompt_cb
 func show_prompt_cb(greeter *C.LightDMGreeter, text *C.char, prompt_type C.LightDMPromptType) {
 	log.Print("[show_prompt_cb]")
-	label.SetText("password")
 	if prompt_type == C.LIGHTDM_PROMPT_TYPE_SECRET {
-		entry.SetVisibility(false)
+		app.PasswordMode()
 	} else {
-		entry.SetVisibility(true)
+		app.UsernameMode()
 	}
 }
 
-// TODO investigate lightdm server, do I really need this ?
-//export show_message_cb
-func show_message_cb(greeter *C.LightDMGreeter, text *C.char, msg_type C.LightDMMessageType) {
-	log.Print("[show_message_cb]")
-	txt := C.GoString(text)
-	label.SetText(txt)
-}
+/************************/
+/* GTK Callback Factory */
+/************************/
 
-/*****************/
-/* GTK Callbacks */
-/*****************/
-
-func create_entry_cb(greeter *C.LightDMGreeter) func() {
+func createEntryCallback(greeter *C.LightDMGreeter) func() {
 	return func() {
-		input, _ := entry.GetText()
-		entry.SetText("")
-
+		input, _ := app.PopText()
 		c_input := C.CString(input)
 		defer C.free(unsafe.Pointer(c_input))
 
 		if C.lightdm_greeter_get_is_authenticated(greeter) != 0 {
-			// start_session ?
-			log.Print("authentication ok")
+			// session starting
+			// looks like dead code, not printed in log
+			app.label.SetText("session starts...")
+			log.Print("[entry_callback] authentication ok")
 		} else if C.lightdm_greeter_get_in_authentication(greeter) != 0 {
 			// give pwd
+			log.Print("[entry_callback] giving pwd")
 			C.lightdm_greeter_respond(greeter, c_input, nil)
-			entry.SetSensitive(false)
+			app.DisableEntry()
 		} else {
 			// give username
+			log.Print("[entry_callback] giving username")
 			C.lightdm_greeter_authenticate(greeter, c_input, nil)
 		}
 	}
 }
 
-func main() {
-	log.Print("lightdm-micro-greeter start up")
+/*************************/
+/* lightdm-micro-greeter */
+/*************************/
 
-	// Reading configuration file
-	config := load_config()
-
-	// Connect to LightDM deamon
-	greeter := C.lightdm_greeter_new()
-	// TODO fix invalid pointer at runtime
-	// defer C.free(unsafe.Pointer(greeter))
-	// should I really free this ? Does glib free it for me ? should I use g_free ?
+func initGreeter(username string) (greeter *C.LightDMGreeter, err error) {
+	greeter = C.lightdm_greeter_new()
 	if C.lightdm_greeter_connect_to_daemon_sync(greeter, nil) == 0 {
-		log.Fatal("greeter can't connect to daemon")
+		err = fmt.Errorf("can't connect to LightDM deamon")
 	} else {
-		log.Print("greeter connected to lightdm deamon")
-	}
-	C.greeter_signal_connect(greeter)
-
-	// GTK
-	log.Print("gtk init")
-	gtk.Init(nil)
-
-	win, _ := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
-	// seems useless, never called when session starts
-	win.Connect("destroy", func() {
-		log.Print("destroy signal called: quitting gtk")
-		gtk.MainQuit()
-	})
-
-	// get screen information to resize as full screen
-	// .Fullscreen() is not working here
-	display, _ := win.GetDisplay()
-	monitor, _ := display.GetPrimaryMonitor()
-	rect := monitor.GetGeometry()
-	win.Resize(rect.GetWidth(), rect.GetHeight())
-
-	// simple fixed layout
-	layout, _ := gtk.FixedNew()
-	win.Add(layout)
-
-	// create a box for label and entry
-	box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, config.Entry.Margin)
-	box.SetHAlign(gtk.ALIGN_CENTER)
-	box.SetVAlign(gtk.ALIGN_CENTER)
-
-	label, _ = gtk.LabelNew("username")
-	label.SetHAlign(gtk.ALIGN_CENTER)
-	label.SetVAlign(gtk.ALIGN_CENTER)
-	box.Add(label)
-
-	entry, _ = gtk.EntryNew()
-	entry.SetHAlign(gtk.ALIGN_CENTER)
-	entry.SetVAlign(gtk.ALIGN_CENTER)
-	entry.SetWidthChars(config.Entry.WidthChars)
-	entry.Connect("activate", create_entry_cb(greeter))
-	box.Add(entry)
-
-	// set background image, auto scaling while preserving aspect ratio
-	if config.Wallpaper != "" {
-		filename := BASE_PATH + config.Wallpaper
-
-		filestat, _ := os.Stat(filename)
-		if filestat.IsDir() {
-			files, _ := os.ReadDir(filename)
-			rand.Seed(time.Now().UnixNano())
-			filename += files[rand.Intn(len(files))].Name()
-		}
-		log.Print("Loading file " + filename)
-		pixbuf, _ := gdk.PixbufNewFromFileAtSize(filename, rect.GetWidth(), rect.GetHeight())
-		bg, _ := gtk.ImageNewFromPixbuf(pixbuf)
-		layout.Put(bg, 0, 0)
+		C.greeter_signal_connect(greeter)
 	}
 
-	// set box
-	// TODO find a cleaner way to acheive this, might induce flickering
-	// I have to put the box and render it before having access to its size
-	layout.Add(box)
-	win.ShowAll()
-	// now that size is known, compute center
-	center_x := int(float32(rect.GetWidth()) * config.Entry.XLocationRatio)
-	center_y := int(float32(rect.GetHeight()) * config.Entry.YLocationRatio)
-	offset_x := box.GetAllocatedWidth() / 2
-	offset_y := box.GetAllocatedWidth() / 2
-	// center box
-	layout.Remove(box)
-	layout.Put(box, center_x-offset_x, center_y-offset_y)
-	entry.GrabFocus()
+	return
+}
 
-	// Starts autologin if provided
+func main() {
+	config, err := loadConfig(CONFIG_FILE)
+	if err != nil {
+		fmt.Printf("[load_config] fallback on default configuration\n%s\n", err)
+	} else {
+		fmt.Printf("[load_config] configuration loaded from " + CONFIG_FILE)
+	}
+
+	err = app.Init(config)
+	if err != nil {
+		log.Fatalf("[init_ui] fatal error: %s", err)
+	} else {
+		fmt.Printf("[init_ui] ok")
+	}
+
+	greeter, err := initGreeter(config.Username)
+	if err != nil {
+		log.Fatalf("[init_greeter] fatal error: %s", err)
+	} else {
+		log.Printf("[init_greeter] greeter connected to LightDM deamon")
+	}
+
+	// Autologin
 	if config.Username != "" {
 		c_username = C.CString(config.Username)
 		defer C.free(unsafe.Pointer(c_username))
 		C.lightdm_greeter_authenticate(greeter, c_username, nil)
 	}
 
-	log.Print("gtk start")
-	gtk.Main()
+	log.Print("Starting greeter")
+	app.Start(createEntryCallback(greeter))
 }
