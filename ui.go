@@ -61,6 +61,10 @@ func (app *AppUI) Init(config Configuration) (err error) {
 	}
 	box.SetHAlign(gtk.ALIGN_CENTER)
 	box.SetVAlign(gtk.ALIGN_CENTER)
+	style, _ := window.GetStyleContext()
+	css, _ := gtk.CssProviderNew()
+	css.LoadFromData("label {-gtk-dpi: 288; background-color: #000000; color: rgb(255,255,255);}")
+	style.AddProvider(css, 1)
 
 	// init label
 	app.label, err = gtk.LabelNew("username")
