@@ -9,7 +9,7 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 )
 
-type AppUI struct {
+type GreeterUI struct {
 	config Configuration
 	entry  *gtk.Entry
 	label  *gtk.Label
@@ -34,7 +34,8 @@ box {
 }
 `
 
-func (app *AppUI) Init(config Configuration) (err error) {
+func NewUI(config Configuration, entryCallback func()) (app *GreeterUI, err error) {
+	app = &GreeterUI{}
 	app.config = config
 
 	gtk.Init(nil)
@@ -87,6 +88,7 @@ func (app *AppUI) Init(config Configuration) (err error) {
 	app.entry.SetHAlign(gtk.ALIGN_CENTER)
 	app.entry.SetVAlign(gtk.ALIGN_CENTER)
 	app.entry.SetWidthChars(config.Entry.WidthChars)
+	app.entry.Connect("activate", entryCallback)
 	box.Add(app.entry)
 
 	// Setup CSS provider
@@ -115,32 +117,31 @@ func (app *AppUI) Init(config Configuration) (err error) {
 	return
 }
 
-func (app *AppUI) Start(entryCallback func()) {
-	app.entry.Connect("activate", entryCallback)
+func (app *GreeterUI) Start() {
 	app.entry.GrabFocus()
 	gtk.Main()
 }
 
-func (app *AppUI) UsernameMode() {
+func (app *GreeterUI) UsernameMode() {
 	app.label.SetText(app.config.Label.UsernameText)
 	app.entry.SetVisibility(true)
 }
 
-func (app *AppUI) PasswordMode() {
+func (app *GreeterUI) PasswordMode() {
 	app.label.SetText(app.config.Label.PasswordText)
 	app.entry.SetVisibility(false)
 }
 
-func (app *AppUI) DisableEntry() {
+func (app *GreeterUI) DisableEntry() {
 	app.entry.SetSensitive(false)
 }
 
-func (app *AppUI) EnableEntry() {
+func (app *GreeterUI) EnableEntry() {
 	app.entry.SetSensitive(true)
 	app.entry.GrabFocus()
 }
 
-func (app *AppUI) PopText() (txt string, err error) {
+func (app *GreeterUI) PopText() (txt string, err error) {
 	txt, err = app.entry.GetText()
 	app.entry.SetText("")
 	return
