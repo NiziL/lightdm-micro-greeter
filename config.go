@@ -31,6 +31,8 @@ func loadConfig(fpath string) (config Configuration, err error) {
 	config.DPI = 96
 	config.Label.Color = "#ffffff"
 	config.Label.Margin = 10
+	config.Label.UsernameText = "username:"
+	config.Label.PasswordText = "password:"
 	config.Entry.WidthChars = 10
 	config.Box.OffsetTop = 0
 	config.Box.OffsetBottom = 0
