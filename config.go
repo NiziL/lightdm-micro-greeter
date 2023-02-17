@@ -19,8 +19,10 @@ type Configuration struct {
 		WidthChars int
 	}
 	Box struct {
-		OffsetTop    int
-		OffsetBottom int
+		MarginLeft   int
+		MarginTop    int
+		MarginBottom int
+		MarginRight  int
 	}
 }
 
@@ -34,8 +36,10 @@ func loadConfig(fpath string) (config Configuration, err error) {
 	config.Label.UsernameText = "username:"
 	config.Label.PasswordText = "password:"
 	config.Entry.WidthChars = 10
-	config.Box.OffsetTop = 0
-	config.Box.OffsetBottom = 0
+	config.Box.MarginTop = 0
+	config.Box.MarginBottom = 0
+	config.Box.MarginLeft = 0
+	config.Box.MarginRight = 0
 
 	// loading conf file
 	file, err := os.Open(fpath)

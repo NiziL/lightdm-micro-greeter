@@ -10,7 +10,9 @@
         "WidthChars": 10
     },
     "Box": {
-        "OffsetTop": 0,
-        "OffsetBottom": 0
+        "MarginTop": 0,
+        "MarginLeft": 0,
+        "MarginRight": 0,
+        "MarginBottom": 0
     }
 }

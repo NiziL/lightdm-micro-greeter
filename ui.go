@@ -29,6 +29,8 @@ label {
 box {
 	margin-top: %d;
 	margin-bottom: %d;
+	margin-left: %d;
+	margin-right: %d;
 }
 `
 
@@ -101,8 +103,11 @@ func (app *AppUI) Init(config Configuration) (err error) {
 		pickWallpaper(BASE_PATH+config.Wallpaper),
 		config.Label.Color,
 		config.Label.Margin,
-		config.Box.OffsetBottom,
-		config.Box.OffsetTop)
+		config.Box.MarginTop,
+		config.Box.MarginBottom,
+		config.Box.MarginLeft,
+		config.Box.MarginRight)
+
 	cssProvider.LoadFromData(css)
 	gtk.AddProviderForScreen(screen, cssProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
