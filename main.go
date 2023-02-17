@@ -26,6 +26,7 @@ const CONFIG_FILE = BASE_PATH + "config.json"
 /* GLOBAL VARS */
 /***************/
 
+// ui : needed by exported callbacks
 var app *GreeterUI
 
 // flag : multi user mode ? nil : username

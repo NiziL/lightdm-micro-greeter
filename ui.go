@@ -24,13 +24,13 @@ window {
 }
 label {
 	color: %s;
-	margin: %d;
+	margin: %dpx;
 }
 box {
-	margin-top: %d;
-	margin-bottom: %d;
-	margin-left: %d;
-	margin-right: %d;
+	margin-top: %dpx;
+	margin-bottom: %dpx;
+	margin-left: %dpx;
+	margin-right: %dpx;
 }
 `
 
