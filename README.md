@@ -9,19 +9,10 @@ Many thanks to Matt Fischer for [his great blog post](http://www.mattfischer.com
 
 - log in
 - single-user or multi-user mode
+- suited for HiDPI monitor
 - wallpaper customization
     - autoscaling on your primary monitor
     - random selection from a directory
-
-#### Backlog
-
-- [ ] shutdown, reboot and so
-- [x] random wallpaper from a directory
-- [ ] better handling of multihead setup
-- [ ] hexcode in Wallpaper config to control background color
-- [x] HiDPI handling
-- [ ] error message feedback (wrong password, unknown user...)
-- [ ] packaging
 
 
 ## Installation
