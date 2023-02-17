@@ -26,7 +26,7 @@ const CONFIG_FILE = BASE_PATH + "config.json"
 /* GLOBAL VARS */
 /***************/
 
-var app GreeterUI
+var app *GreeterUI
 
 // flag : multi user mode ? nil : username
 var c_username *C.char = nil
@@ -120,7 +120,7 @@ func main() {
 		log.Printf("[init_greeter] greeter connected to LightDM deamon")
 	}
 
-	app, err := NewUI(config, createEntryCallback(greeter))
+	app, err = NewUI(config, createEntryCallback(greeter))
 	if err != nil {
 		log.Fatalf("[init_ui] fatal error: %s", err)
 	} else {
