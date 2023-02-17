@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
-	"time"
 
-	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
 )
 
@@ -15,42 +13,35 @@ type AppUI struct {
 	label *gtk.Label
 }
 
-const CSS_DATA_ALL = `
-label {
-	-gtk-dpi: 288;
-	background-color: rgb(0, 0, 0);
-}
-box {
-	background-color: rgb(0, 0, 0);
-	margin-top: auto;
-	margin-bottom: auto;
-	margin-left: auto;
-	margin-right: auto;
-}
-`
-
 const CSS_DATA = `
+window {
+	-gtk-dpi: 384;
+	background-image: url("/etc/lightdm/lightdm-micro-greeter/wallpapers/earth.png");
+	background-size: 100%; 
+	background-repeat: no-repeat; 
+}
 label {
-	background-color: rgb(0, 255, 0);
+	color: #ffffff;
+	margin: 10;
 }
 box {
-	background-color: rgb(0, 0, 0);
+	margin-top: 0;
+	margin-bottom: 0;
 }
 `
 
 func (app *AppUI) Init(config Configuration) (err error) {
 	gtk.Init(nil)
 
-	// fullscreen window
+	// Create fullscreen window
 	window, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
 	if err != nil {
 		return
 	}
-	// looks like dead code, never really called
 	window.Connect("destroy", func() {
+		// looks like dead code, never really called
 		gtk.MainQuit()
 	})
-
 	// get screen information to resize as full screen
 	// window.Fullscreen() is not working here
 	display, err := window.GetDisplay()
@@ -61,39 +52,17 @@ func (app *AppUI) Init(config Configuration) (err error) {
 	if err != nil {
 		return
 	}
-	rect := monitor.GetGeometry()
-	width := rect.GetWidth()
-	height := rect.GetHeight()
+	window.Resize(monitor.GetGeometry().GetWidth(), monitor.GetGeometry().GetHeight())
 
-	window.Resize(width, height)
-
-	// Setup CSS provider
-	screen, err := gdk.ScreenGetDefault()
-	if err != nil {
-		return
-	}
-	cssProvider, err := gtk.CssProviderNew()
-	if err != nil {
-		return
-	}
-	//TODO cssProvider.LoadFromPath() from config
-	cssProvider.LoadFromData(CSS_DATA)
-	gtk.AddProviderForScreen(screen, cssProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-
-	// simple fixed layout
-	layout, err := gtk.FixedNew()
-	if err != nil {
-		return
-	}
-	//window.Add(layout)
-
-	// init box for label and entry
-	box, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, config.Entry.Margin)
+	// Create UI layout
+	// init box
+	box, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
 	if err != nil {
 		return
 	}
 	box.SetHAlign(gtk.ALIGN_CENTER)
 	box.SetVAlign(gtk.ALIGN_CENTER)
+	window.Add(box)
 
 	// init label
 	app.label, err = gtk.LabelNew("username:")
@@ -114,33 +83,19 @@ func (app *AppUI) Init(config Configuration) (err error) {
 	app.entry.SetWidthChars(config.Entry.WidthChars)
 	box.Add(app.entry)
 
-	//window.Add(box)
-
-	// set box centered
-	// TODO find a cleaner way to acheive this, might induce flickering
-	// for now, I have to put the box and render it before having access to its size
-	layout.Add(box)
-	window.Add(layout)
-	//window.ShowAll()
-	//// now that size is known, compute center
-	//center_x := int(float32(width) * config.Entry.XLocationRatio)
-	//center_y := int(float32(height) * config.Entry.YLocationRatio)
-	//offset_x := box.GetAllocatedWidth() / 2
-	//offset_y := box.GetAllocatedWidth() / 2
-	//// center box
-	//layout.Remove(box)
-
-	//// set background image, auto scaling while preserving aspect ratio
-	//bg, err := loadWallpaper(BASE_PATH+config.Wallpaper, width, height)
-	//if err != nil {
-	//	err = fmt.Errorf("[load_wallpaper] error loading wallpaper \n(%s)", err)
-	//} else {
-	//	layout.Put(bg, 0, 0)
-	//}
-	//layout.Put(box, center_x-offset_x, center_y-offset_y)
+	// Setup CSS provider
+	screen := window.GetScreen()
+	if err != nil {
+		return
+	}
+	cssProvider, err := gtk.CssProviderNew()
+	if err != nil {
+		return
+	}
+	cssProvider.LoadFromData(CSS_DATA) // TODO forge CSS_DATA with config
+	gtk.AddProviderForScreen(screen, cssProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
 	window.ShowAll()
-
 	return
 }
 
@@ -175,7 +130,7 @@ func (app *AppUI) PopText() (txt string, err error) {
 	return
 }
 
-func loadWallpaper(fpath string, width, height int) (bg *gtk.Image, err error) {
+func pickWallpaper(fpath string, width, height int) (pickedpath string, err error) {
 	filestat, err := os.Stat(fpath)
 	if err != nil {
 		err = fmt.Errorf("[load_wallpaper] error opening %s \n(%s)", fpath, err)
@@ -183,14 +138,8 @@ func loadWallpaper(fpath string, width, height int) (bg *gtk.Image, err error) {
 	}
 	if filestat.IsDir() {
 		files, _ := os.ReadDir(fpath)
-		rand.Seed(time.Now().UnixNano())
 		fpath += files[rand.Intn(len(files))].Name()
 	}
-	pixbuf, err := gdk.PixbufNewFromFileAtSize(fpath, width, height)
-	if err != nil {
-		err = fmt.Errorf("[load_wallpaper] error loading %s \n(%s)", fpath, err)
-		return
-	}
-	bg, err = gtk.ImageNewFromPixbuf(pixbuf)
+	pickedpath = fpath
 	return
 }
