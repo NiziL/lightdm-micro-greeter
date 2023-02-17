@@ -9,20 +9,10 @@ Many thanks to Matt Fischer for [his great blog post](http://www.mattfischer.com
 
 - log in
 - single-user or multi-user mode
+- suited for HiDPI monitor
 - wallpaper customization
     - autoscaling on your primary monitor
     - random selection from a directory
-
-#### Backlog
-
-- [ ] shutdown, reboot and so
-- [x] random wallpaper from a directory
-- [ ] better wallpaper placement in case of different aspect ratio
-- [ ] better handling of multihead setup
-- [ ] hexcode in Wallpaper config to control background color
-- [ ] HiDPI handling (e.g. entry auto scaling)
-- [ ] error message feedback (wrong password, unknown user...)
-- [ ] packaging
 
 
 ## Installation
@@ -58,7 +48,7 @@ Now, you have to tell LightDM to use this greeter, and this is done in two simpl
 - Create a [desktop entry](https://wiki.archlinux.org/title/desktop_entries) at `/usr/share/xgreeters` which execute `lightdm-micro-greeter`. 
 - Change the LightDM config to use the newly created `.desktop`, it could be done through the `greeter-session` parameter of `/etc/lightdm/lightdm.conf`.
 
-If `lightdm-micro-greeter` binary is accessible from your `PATH`, you could use [the desktop file](https://github.com/NiziL/lightdm-micro-greeter/blob/main/data/lightdm-micro-greeter.desktop) in the data directory and set `greeter-session=lightdm-micro-greeter`.
+If `lightdm-micro-greeter` binary is accessible from your `PATH` (i.e. `GOBIN` is in it), you could use [the desktop file](https://github.com/NiziL/lightdm-micro-greeter/blob/main/data/lightdm-micro-greeter.desktop) in the data directory and set `greeter-session=lightdm-micro-greeter`.
 
 If you've got the binary using a `git clone`/`go build`, you could just run the following commands **as root**.
 ```bash
@@ -76,14 +66,21 @@ All the configuration is handled within the `/etc/lightdm/lightdm-micro-greeter/
 If the file does not exist, the following configuration will be used:
 ```json
 {
-   "Username": "",
-   "Wallpaper" : "",
-   "Entry": {
-       "WidthChars": 10,
-       "Margin": 10,
-       "XLocationRatio": 0.5,
-       "YLocationRatio": 0.5
-   }
+    "Username": "",
+    "Wallpaper" : "",
+    "DPI": 96,
+    "Entry": {
+        "WidthChars": 10,
+    },
+    "Label": {
+        "Margin": 10,
+        "Color": "#ffffff",
+        "UsernameText": "username:",
+        "PasswordText": "password:",
+    },
+    "Box": {
+        ""
+    }
 }
 ```
 
@@ -91,10 +88,15 @@ If the file does not exist, the following configuration will be used:
 |------------|--------|
 | `Username` | keep empty for multi-user mode, providing an username will switch to single-user. |
 | `Wallpaper` | path to an image or a directory, `/etc/lightdm/lightdm-micro-greeter/` will be prepended. |
+|`DPI`| dpi used. |
 | `Entry.WidthChars` | entry width in chars. |
-| `Entry.Margin` | margin between label and entry in pixel. |
-| `Entry.XLocationRatio ` | control entry x position |
-| `Entry.YLocationRatio` | control entry y position |
+| `Label.Margin` | label margin in pixel. |
+| `Label.Color` | label text color. |
+| `Label.UsernameText` | label text when waiting for username. |
+| `Label.PasswordText` | label text when waiting for password. |
+| `Label.Color` | label text color. |
+| `Box.OffsetTop` | box offset from top. |
+| `Box.OffsetBottom` | box offset from bottom. |
 
 ### Tips & Tricks
 

@@ -26,7 +26,8 @@ const CONFIG_FILE = BASE_PATH + "config.json"
 /* GLOBAL VARS */
 /***************/
 
-var app = &AppUI{nil, nil}
+// ui : needed by exported callbacks
+var app *GreeterUI
 
 // flag : multi user mode ? nil : username
 var c_username *C.char = nil
@@ -113,18 +114,18 @@ func main() {
 		fmt.Printf("[load_config] configuration loaded from " + CONFIG_FILE)
 	}
 
-	err = app.Init(config)
-	if err != nil {
-		log.Fatalf("[init_ui] fatal error: %s", err)
-	} else {
-		fmt.Printf("[init_ui] ok")
-	}
-
 	greeter, err := initGreeter(config.Username)
 	if err != nil {
 		log.Fatalf("[init_greeter] fatal error: %s", err)
 	} else {
 		log.Printf("[init_greeter] greeter connected to LightDM deamon")
+	}
+
+	app, err = NewUI(config, createEntryCallback(greeter))
+	if err != nil {
+		log.Fatalf("[init_ui] fatal error: %s", err)
+	} else {
+		fmt.Printf("[init_ui] ok")
 	}
 
 	// Autologin
@@ -135,5 +136,5 @@ func main() {
 	}
 
 	log.Print("Starting greeter")
-	app.Start(createEntryCallback(greeter))
+	app.Start()
 }
