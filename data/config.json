@@ -1,10 +1,16 @@
 {
     "Username": "",
-    "Wallpaper" : "",
+    "Wallpaper": "",
+    "DPI": 96,
+    "Label": {
+        "Color": "#ffffff",
+        "Margin": 10
+    },
     "Entry": {
-        "WidthChars": 10,
-        "Margin": 10,
-        "XLocationRatio": 0.5,
-        "YLocationRatio": 0.5
+        "WidthChars": 10
+    },
+    "Box": {
+        "OffsetTop": 0,
+        "OffsetBottom": 0
     }
 }

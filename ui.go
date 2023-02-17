@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"os"
 
@@ -9,28 +10,31 @@ import (
 )
 
 type AppUI struct {
-	entry *gtk.Entry
-	label *gtk.Label
+	config Configuration
+	entry  *gtk.Entry
+	label  *gtk.Label
 }
 
-const CSS_DATA = `
+const CSS_TEMPLATE = `
 window {
-	-gtk-dpi: 384;
-	background-image: url("/etc/lightdm/lightdm-micro-greeter/wallpapers/earth.png");
-	background-size: 100%; 
+	-gtk-dpi: %d;
+	background-image: url("%s");
+	background-size: cover; 
 	background-repeat: no-repeat; 
 }
 label {
-	color: #ffffff;
-	margin: 10;
+	color: %s;
+	margin: %d;
 }
 box {
-	margin-top: 0;
-	margin-bottom: 0;
+	margin-top: %d;
+	margin-bottom: %d;
 }
 `
 
 func (app *AppUI) Init(config Configuration) (err error) {
+	app.config = config
+
 	gtk.Init(nil)
 
 	// Create fullscreen window
@@ -65,7 +69,7 @@ func (app *AppUI) Init(config Configuration) (err error) {
 	window.Add(box)
 
 	// init label
-	app.label, err = gtk.LabelNew("username:")
+	app.label, err = gtk.LabelNew(config.Label.UsernameText)
 	if err != nil {
 		return
 	}
@@ -92,7 +96,14 @@ func (app *AppUI) Init(config Configuration) (err error) {
 	if err != nil {
 		return
 	}
-	cssProvider.LoadFromData(CSS_DATA) // TODO forge CSS_DATA with config
+	css := fmt.Sprintf(CSS_TEMPLATE,
+		config.DPI,
+		pickWallpaper(BASE_PATH+config.Wallpaper),
+		config.Label.Color,
+		config.Label.Margin,
+		config.Box.OffsetBottom,
+		config.Box.OffsetTop)
+	cssProvider.LoadFromData(css)
 	gtk.AddProviderForScreen(screen, cssProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
 	window.ShowAll()
@@ -106,12 +117,12 @@ func (app *AppUI) Start(entryCallback func()) {
 }
 
 func (app *AppUI) UsernameMode() {
-	app.label.SetText("username:")
+	app.label.SetText(app.config.Label.UsernameText)
 	app.entry.SetVisibility(true)
 }
 
 func (app *AppUI) PasswordMode() {
-	app.label.SetText("password:")
+	app.label.SetText(app.config.Label.PasswordText)
 	app.entry.SetVisibility(false)
 }
 
@@ -130,11 +141,11 @@ func (app *AppUI) PopText() (txt string, err error) {
 	return
 }
 
-func pickWallpaper(fpath string, width, height int) (pickedpath string, err error) {
+func pickWallpaper(fpath string) (pickedpath string) {
 	filestat, err := os.Stat(fpath)
 	if err != nil {
-		err = fmt.Errorf("[load_wallpaper] error opening %s \n(%s)", fpath, err)
-		return
+		log.Printf("[load_wallpaper] error opening %s \n(%s)", fpath, err)
+		return ""
 	}
 	if filestat.IsDir() {
 		files, _ := os.ReadDir(fpath)
