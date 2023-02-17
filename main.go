@@ -26,7 +26,7 @@ const CONFIG_FILE = BASE_PATH + "config.json"
 /* GLOBAL VARS */
 /***************/
 
-var app = &AppUI{nil, nil}
+var app = &AppUI{}
 
 // flag : multi user mode ? nil : username
 var c_username *C.char = nil
