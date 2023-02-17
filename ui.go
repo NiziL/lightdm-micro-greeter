@@ -15,6 +15,29 @@ type AppUI struct {
 	label *gtk.Label
 }
 
+const CSS_DATA_ALL = `
+label {
+	-gtk-dpi: 288;
+	background-color: rgb(0, 0, 0);
+}
+box {
+	background-color: rgb(0, 0, 0);
+	margin-top: auto;
+	margin-bottom: auto;
+	margin-left: auto;
+	margin-right: auto;
+}
+`
+
+const CSS_DATA = `
+label {
+	background-color: rgb(0, 255, 0);
+}
+box {
+	background-color: rgb(0, 0, 0);
+}
+`
+
 func (app *AppUI) Init(config Configuration) (err error) {
 	gtk.Init(nil)
 
@@ -29,7 +52,7 @@ func (app *AppUI) Init(config Configuration) (err error) {
 	})
 
 	// get screen information to resize as full screen
-	// .Fullscreen() is not working here
+	// window.Fullscreen() is not working here
 	display, err := window.GetDisplay()
 	if err != nil {
 		return
@@ -43,31 +66,37 @@ func (app *AppUI) Init(config Configuration) (err error) {
 	height := rect.GetHeight()
 
 	window.Resize(width, height)
+
+	// Setup CSS provider
+	screen, err := gdk.ScreenGetDefault()
 	if err != nil {
 		return
 	}
+	cssProvider, err := gtk.CssProviderNew()
+	if err != nil {
+		return
+	}
+	//TODO cssProvider.LoadFromPath() from config
+	cssProvider.LoadFromData(CSS_DATA)
+	gtk.AddProviderForScreen(screen, cssProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
 	// simple fixed layout
 	layout, err := gtk.FixedNew()
 	if err != nil {
 		return
 	}
-	window.Add(layout)
+	//window.Add(layout)
 
 	// init box for label and entry
-	box, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, config.Entry.Margin)
+	box, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, config.Entry.Margin)
 	if err != nil {
 		return
 	}
 	box.SetHAlign(gtk.ALIGN_CENTER)
 	box.SetVAlign(gtk.ALIGN_CENTER)
-	style, _ := window.GetStyleContext()
-	css, _ := gtk.CssProviderNew()
-	css.LoadFromData("label {-gtk-dpi: 288; background-color: #000000; color: rgb(255,255,255);}")
-	style.AddProvider(css, 1)
 
 	// init label
-	app.label, err = gtk.LabelNew("username")
+	app.label, err = gtk.LabelNew("username:")
 	if err != nil {
 		return
 	}
@@ -85,27 +114,31 @@ func (app *AppUI) Init(config Configuration) (err error) {
 	app.entry.SetWidthChars(config.Entry.WidthChars)
 	box.Add(app.entry)
 
+	//window.Add(box)
+
 	// set box centered
 	// TODO find a cleaner way to acheive this, might induce flickering
 	// for now, I have to put the box and render it before having access to its size
 	layout.Add(box)
-	window.ShowAll()
-	// now that size is known, compute center
-	center_x := int(float32(width) * config.Entry.XLocationRatio)
-	center_y := int(float32(height) * config.Entry.YLocationRatio)
-	offset_x := box.GetAllocatedWidth() / 2
-	offset_y := box.GetAllocatedWidth() / 2
-	// center box
-	layout.Remove(box)
+	window.Add(layout)
+	//window.ShowAll()
+	//// now that size is known, compute center
+	//center_x := int(float32(width) * config.Entry.XLocationRatio)
+	//center_y := int(float32(height) * config.Entry.YLocationRatio)
+	//offset_x := box.GetAllocatedWidth() / 2
+	//offset_y := box.GetAllocatedWidth() / 2
+	//// center box
+	//layout.Remove(box)
 
-	// set background image, auto scaling while preserving aspect ratio
-	bg, err := loadWallpaper(BASE_PATH+config.Wallpaper, width, height)
-	if err != nil {
-		err = fmt.Errorf("[load_wallpaper] error loading wallpaper \n(%s)", err)
-	} else {
-		layout.Put(bg, 0, 0)
-	}
-	layout.Put(box, center_x-offset_x, center_y-offset_y)
+	//// set background image, auto scaling while preserving aspect ratio
+	//bg, err := loadWallpaper(BASE_PATH+config.Wallpaper, width, height)
+	//if err != nil {
+	//	err = fmt.Errorf("[load_wallpaper] error loading wallpaper \n(%s)", err)
+	//} else {
+	//	layout.Put(bg, 0, 0)
+	//}
+	//layout.Put(box, center_x-offset_x, center_y-offset_y)
+
 	window.ShowAll()
 
 	return
@@ -118,12 +151,12 @@ func (app *AppUI) Start(entryCallback func()) {
 }
 
 func (app *AppUI) UsernameMode() {
-	app.label.SetText("username")
+	app.label.SetText("username:")
 	app.entry.SetVisibility(true)
 }
 
 func (app *AppUI) PasswordMode() {
-	app.label.SetText("password")
+	app.label.SetText("password:")
 	app.entry.SetVisibility(false)
 }
 
