@@ -4,6 +4,9 @@ A minimalist LightDM greeter written in Go, powered by [gotk3](https://github.co
 
 Many thanks to Matt Fischer for [his great blog post](http://www.mattfischer.com/blog/archives/5).
 
+![screenshot](https://github.com/NiziL/lightdm-micro-greeter/blob/main/data/example.jpg)
+*Example screenshot, unknown artist: please open an issue to credit him/her !*
+
 
 ## Features
 
