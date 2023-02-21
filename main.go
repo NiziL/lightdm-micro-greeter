@@ -95,7 +95,7 @@ func createEntryCallback(greeter *C.LightDMGreeter) func() {
 /* lightdm-micro-greeter */
 /*************************/
 
-func initGreeter(username string) (greeter *C.LightDMGreeter, err error) {
+func initGreeter() (greeter *C.LightDMGreeter, err error) {
 	greeter = C.lightdm_greeter_new()
 	if C.lightdm_greeter_connect_to_daemon_sync(greeter, nil) == 0 {
 		err = fmt.Errorf("can't connect to LightDM deamon")
@@ -114,7 +114,7 @@ func main() {
 		fmt.Printf("[load_config] configuration loaded from " + CONFIG_FILE)
 	}
 
-	greeter, err := initGreeter(config.Username)
+	greeter, err := initGreeter()
 	if err != nil {
 		log.Fatalf("[init_greeter] fatal error: %s", err)
 	} else {

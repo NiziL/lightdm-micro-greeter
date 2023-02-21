@@ -3,11 +3,13 @@
     "Wallpaper": "",
     "DPI": 96,
     "Label": {
-        "Color": "#ffffff",
+        "Color": "#000000",
         "Margin": 10
     },
     "Entry": {
-        "WidthChars": 10
+        "WidthChars": 10,
+        "Color": "#000000",
+        "BackgroundColor": "#ffffff"
     },
     "Box": {
         "MarginTop": 0,

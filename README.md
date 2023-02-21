@@ -70,13 +70,17 @@ If the file does not exist, [this configuration](https://github.com/NiziL/lightd
 | `Wallpaper` | path to an image or a directory, `/etc/lightdm/lightdm-micro-greeter/` will be prepended. |
 |`DPI`| dpi used. |
 | `Entry.WidthChars` | entry width in chars. |
+| `Entry.Color` | entry text color (hexcode or rgba). |
+| `Entry.BackgroundColor` | entry background color (hexcode or rgba). |
 | `Label.Margin` | label margin in pixel. |
-| `Label.Color` | label text color. |
+| `Label.Color` | label text color (hexcode or rgba). |
 | `Label.UsernameText` | label text when waiting for username. |
 | `Label.PasswordText` | label text when waiting for password. |
-| `Label.Color` | label text color. |
-| `Box.OffsetTop` | box offset from top. |
-| `Box.OffsetBottom` | box offset from bottom. |
+| `Label.Color` | label text color (hexcode or rgba). |
+| `Box.MarginTop` | box margin top, in pixel. |
+| `Box.MarginBottom` | box margin bottom, in pixel. |
+| `Box.MarginLeft` | box margin left, in pixel. |
+| `Box.MarginRight` | box margin right, in pixel. |
 
 If `Wallpaper` is a directory, it must only contain images, as the greeter will randomly chose a file from this directory. 
 

@@ -32,6 +32,10 @@ box {
 	margin-left: %dpx;
 	margin-right: %dpx;
 }
+entry {
+	color: %s;
+	background-color: %s;
+}
 `
 
 func NewUI(config Configuration, entryCallback func()) (app *GreeterUI, err error) {
@@ -108,7 +112,9 @@ func NewUI(config Configuration, entryCallback func()) (app *GreeterUI, err erro
 		config.Box.MarginTop,
 		config.Box.MarginBottom,
 		config.Box.MarginLeft,
-		config.Box.MarginRight)
+		config.Box.MarginRight,
+		config.Entry.Color,
+		config.Entry.BackgroundColor)
 
 	cssProvider.LoadFromData(css)
 	gtk.AddProviderForScreen(screen, cssProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
