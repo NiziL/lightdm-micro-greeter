@@ -39,7 +39,7 @@ func loadConfig(fpath string) (config Configuration, err error) {
 	config.Label.PasswordText = "password:"
 	config.Entry.WidthChars = 10
 	config.Entry.Color = "#000000"
-	config.Entry.BackgroundColor = "#fffff"
+	config.Entry.BackgroundColor = "#ffffff"
 	config.Box.MarginTop = 0
 	config.Box.MarginBottom = 0
 	config.Box.MarginLeft = 0
