@@ -35,6 +35,8 @@ box {
 entry {
 	color: %s;
 	background-color: %s;
+	border: none;
+	box-shadow: none;
 }
 `
 
