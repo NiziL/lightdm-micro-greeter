@@ -4,7 +4,9 @@
     "DPI": 96,
     "Label": {
         "Color": "#000000",
-        "Margin": 10
+        "Margin": 0,
+        "UsernameText": "username:",
+        "PassowrdText": "password:"
     },
     "Entry": {
         "WidthChars": 10,

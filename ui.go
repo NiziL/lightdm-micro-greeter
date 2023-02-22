@@ -78,7 +78,7 @@ func NewUI(config Configuration, entryCallback func()) (app *GreeterUI, err erro
 	window.Add(box)
 
 	// init label
-	app.label, err = gtk.LabelNew(config.Label.UsernameText)
+	app.label, err = gtk.LabelNew("")
 	if err != nil {
 		return
 	}
@@ -120,6 +120,8 @@ func NewUI(config Configuration, entryCallback func()) (app *GreeterUI, err erro
 
 	cssProvider.LoadFromData(css)
 	gtk.AddProviderForScreen(screen, cssProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+	app.UsernameMode()
 
 	window.ShowAll()
 	return
