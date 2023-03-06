@@ -93,6 +93,7 @@ func NewUI(config Configuration, entryCallback func()) (app *GreeterUI, err erro
 	}
 	app.entry.SetHAlign(gtk.ALIGN_CENTER)
 	app.entry.SetVAlign(gtk.ALIGN_CENTER)
+	app.entry.SetAlignment(0.5)
 	app.entry.SetWidthChars(config.Entry.WidthChars)
 	app.entry.Connect("activate", entryCallback)
 	box.Add(app.entry)
