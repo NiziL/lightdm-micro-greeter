@@ -72,6 +72,7 @@ If the file does not exist, [this configuration](https://github.com/NiziL/lightd
 | `Entry.WidthChars` | entry width in chars. |
 | `Entry.Color` | entry text color (hexcode or rgba). |
 | `Entry.BackgroundColor` | entry background color (hexcode or rgba). |
+| `Entry.CaretColor` | entry caret color (hexcode or rgba). |
 | `Label.Margin` | label margin in pixel. |
 | `Label.Color` | label text color (hexcode or rgba). |
 | `Label.UsernameText` | label text when waiting for username. |

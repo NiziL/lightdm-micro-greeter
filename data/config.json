@@ -11,7 +11,8 @@
     "Entry": {
         "WidthChars": 10,
         "Color": "#000000",
-        "BackgroundColor": "#ffffff"
+        "BackgroundColor": "#ffffff",
+        "CaretColor": "#000000"
     },
     "Box": {
         "MarginTop": 0,

@@ -35,6 +35,7 @@ box {
 entry {
 	color: %s;
 	background-color: %s;
+	caret-color: %s;
 	border: none;
 	box-shadow: none;
 }
@@ -117,7 +118,9 @@ func NewUI(config Configuration, entryCallback func()) (app *GreeterUI, err erro
 		config.Box.MarginLeft,
 		config.Box.MarginRight,
 		config.Entry.Color,
-		config.Entry.BackgroundColor)
+		config.Entry.BackgroundColor,
+		config.Entry.CaretColor,
+	)
 
 	cssProvider.LoadFromData(css)
 	gtk.AddProviderForScreen(screen, cssProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)

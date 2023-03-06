@@ -19,6 +19,7 @@ type Configuration struct {
 		WidthChars      int
 		Color           string
 		BackgroundColor string
+		CaretColor      string
 	}
 	Box struct {
 		MarginLeft   int
@@ -40,6 +41,7 @@ func loadConfig(fpath string) (config Configuration, err error) {
 	config.Entry.WidthChars = 10
 	config.Entry.Color = "#000000"
 	config.Entry.BackgroundColor = "#ffffff"
+	config.Entry.CaretColor = "#000000"
 	config.Box.MarginTop = 0
 	config.Box.MarginBottom = 0
 	config.Box.MarginLeft = 0
