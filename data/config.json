@@ -3,11 +3,17 @@
     "Wallpaper": "",
     "DPI": 96,
     "Label": {
-        "Color": "#ffffff",
-        "Margin": 10
+        "Color": "#000000",
+        "Margin": 0,
+        "UsernameText": "username:",
+        "PassowrdText": "password:"
     },
     "Entry": {
-        "WidthChars": 10
+        "WidthChars": 10,
+        "TextAlignement": 0.5,
+        "TextColor": "#000000",
+        "BackgroundColor": "#ffffff",
+        "CaretColor": "#000000"
     },
     "Box": {
         "MarginTop": 0,

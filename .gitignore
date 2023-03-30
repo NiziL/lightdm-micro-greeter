@@ -2,3 +2,5 @@
 lightdm-micro-greeter
 # vim swap file
 .*.swp
+# vscode
+.vscode/

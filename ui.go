@@ -32,6 +32,13 @@ box {
 	margin-left: %dpx;
 	margin-right: %dpx;
 }
+entry {
+	color: %s;
+	background-color: %s;
+	caret-color: %s;
+	border: none;
+	box-shadow: none;
+}
 `
 
 func NewUI(config Configuration, entryCallback func()) (app *GreeterUI, err error) {
@@ -72,7 +79,7 @@ func NewUI(config Configuration, entryCallback func()) (app *GreeterUI, err erro
 	window.Add(box)
 
 	// init label
-	app.label, err = gtk.LabelNew(config.Label.UsernameText)
+	app.label, err = gtk.LabelNew("")
 	if err != nil {
 		return
 	}
@@ -87,6 +94,7 @@ func NewUI(config Configuration, entryCallback func()) (app *GreeterUI, err erro
 	}
 	app.entry.SetHAlign(gtk.ALIGN_CENTER)
 	app.entry.SetVAlign(gtk.ALIGN_CENTER)
+	app.entry.SetAlignment(config.Entry.TextAlignement)
 	app.entry.SetWidthChars(config.Entry.WidthChars)
 	app.entry.Connect("activate", entryCallback)
 	box.Add(app.entry)
@@ -108,10 +116,16 @@ func NewUI(config Configuration, entryCallback func()) (app *GreeterUI, err erro
 		config.Box.MarginTop,
 		config.Box.MarginBottom,
 		config.Box.MarginLeft,
-		config.Box.MarginRight)
+		config.Box.MarginRight,
+		config.Entry.Color,
+		config.Entry.BackgroundColor,
+		config.Entry.CaretColor,
+	)
 
 	cssProvider.LoadFromData(css)
 	gtk.AddProviderForScreen(screen, cssProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+	app.UsernameMode()
 
 	window.ShowAll()
 	return
