@@ -117,7 +117,7 @@ func NewUI(config Configuration, entryCallback func()) (app *GreeterUI, err erro
 		config.Box.MarginBottom,
 		config.Box.MarginLeft,
 		config.Box.MarginRight,
-		config.Entry.Color,
+		config.Entry.TextColor,
 		config.Entry.BackgroundColor,
 		config.Entry.CaretColor,
 	)
