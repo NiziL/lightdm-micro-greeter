@@ -13,10 +13,15 @@ Many thanks to Matt Fischer for [his great blog post](http://www.mattfischer.com
 - log in
 - single-user or multi-user mode
 - suited for HiDPI monitor
-- wallpaper customization
-    - autoscaling on your primary monitor
-    - random selection from a directory
-
+- customization
+    - wallpaper 
+        - autoscaling on your primary monitor
+        - random selection from a directory
+    - entry
+        - width
+        - colors (font, background and carret)
+    - label
+        - Choose text for username and password mode
 
 ## Installation
 
