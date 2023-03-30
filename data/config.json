@@ -10,7 +10,8 @@
     },
     "Entry": {
         "WidthChars": 10,
-        "Color": "#000000",
+        "TextAlignement": 0.5,
+        "TextColor": "#000000",
         "BackgroundColor": "#ffffff",
         "CaretColor": "#000000"
     },

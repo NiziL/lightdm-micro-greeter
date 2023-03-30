@@ -17,7 +17,8 @@ type Configuration struct {
 	}
 	Entry struct {
 		WidthChars      int
-		Color           string
+		TextAlignement  float32
+		TextColor       string
 		BackgroundColor string
 		CaretColor      string
 	}
@@ -39,9 +40,10 @@ func loadConfig(fpath string) (config Configuration, err error) {
 	config.Label.UsernameText = "username:"
 	config.Label.PasswordText = "password:"
 	config.Entry.WidthChars = 10
-	config.Entry.Color = "#000000"
+	config.Entry.TextColor = "#000000"
 	config.Entry.BackgroundColor = "#ffffff"
 	config.Entry.CaretColor = "#000000"
+	config.Entry.TextAlignement = 0.5
 	config.Box.MarginTop = 0
 	config.Box.MarginBottom = 0
 	config.Box.MarginLeft = 0

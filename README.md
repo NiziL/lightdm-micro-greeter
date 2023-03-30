@@ -75,9 +75,10 @@ If the file does not exist, [this configuration](https://github.com/NiziL/lightd
 | `Wallpaper` | path to an image or a directory, `/etc/lightdm/lightdm-micro-greeter/` will be prepended. |
 |`DPI`| dpi used. |
 | `Entry.WidthChars` | entry width in chars. |
-| `Entry.Color` | entry text color (hexcode or rgba). |
+| `Entry.TextColor` | entry text color (hexcode or rgba). |
 | `Entry.BackgroundColor` | entry background color (hexcode or rgba). |
 | `Entry.CaretColor` | entry caret color (hexcode or rgba). |
+| `Entry.TextAlignment` | entry text alignement, float between 0 (left) and 1 (right). |
 | `Label.Margin` | label margin in pixel. |
 | `Label.Color` | label text color (hexcode or rgba). |
 | `Label.UsernameText` | label text when waiting for username. |
