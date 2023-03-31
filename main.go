@@ -1,7 +1,7 @@
 package main
 
 /*
-#cgo pkg-config: liblightdm-gobject-1 gobject-2.0
+#cgo pkg-config: liblightdm-gobject-1
 
 #include "lightdm.h"
 
