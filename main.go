@@ -12,7 +12,11 @@ import "C"
 import (
 	"fmt"
 	"log"
+	"syscall"
 	"unsafe"
+
+	"github.com/gotk3/gotk3/gdk"
+	"github.com/gotk3/gotk3/gtk"
 )
 
 /*************/
@@ -91,6 +95,31 @@ func createEntryCallback(greeter *C.LightDMGreeter) func() {
 	}
 }
 
+func createTriggerCallback() func(win *gtk.Window, e *gdk.Event) {
+	return func(win *gtk.Window, e *gdk.Event) {
+		event := gdk.EventKeyNewFromEvent(e)
+		if event.State() == gdk.CONTROL_MASK+uint(gdk.SHIFT_MASK) {
+			var err error
+			switch event.KeyVal() {
+			case gdk.KEY_R:
+				log.Printf("Triggering restart")
+				err = syscall.Reboot(syscall.LINUX_REBOOT_CMD_RESTART)
+			case gdk.KEY_P:
+				log.Printf("Triggering poweroff")
+				err = syscall.Reboot(syscall.LINUX_REBOOT_CMD_POWER_OFF)
+			case gdk.KEY_H:
+				log.Printf("Triggering hibernation")
+				err = syscall.Reboot(syscall.LINUX_REBOOT_CMD_SW_SUSPEND)
+			case gdk.KEY_S:
+				log.Printf("Triggering suspend")
+			}
+			if err != nil {
+				log.Printf("syscall failed %v", err)
+			}
+		}
+	}
+}
+
 /*************************/
 /* lightdm-micro-greeter */
 /*************************/
@@ -121,7 +150,7 @@ func main() {
 		log.Printf("[init_greeter] greeter connected to LightDM deamon")
 	}
 
-	app, err = NewUI(config, createEntryCallback(greeter))
+	app, err = NewUI(config, createEntryCallback(greeter), createTriggerCallback())
 	if err != nil {
 		log.Fatalf("[init_ui] fatal error: %s", err)
 	} else {
