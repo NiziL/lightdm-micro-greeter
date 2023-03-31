@@ -31,12 +31,8 @@ func NewUI(config Configuration, entryCallback func()) (app *GreeterUI, err erro
 	if err != nil {
 		return
 	}
-	window.Connect("destroy", func() {
-		// looks like dead code, never really called
-		gtk.MainQuit()
-	})
 	// get screen information to resize as full screen
-	// window.Fullscreen() is not working here
+	// Fullscreen() and Maximize() are not working here
 	display, err := window.GetDisplay()
 	if err != nil {
 		return
@@ -46,6 +42,12 @@ func NewUI(config Configuration, entryCallback func()) (app *GreeterUI, err erro
 		return
 	}
 	window.Resize(monitor.GetGeometry().GetWidth(), monitor.GetGeometry().GetHeight())
+
+	// Quit gracefully on destroy
+	window.Connect("destroy", func() {
+		// looks like dead code, never really called
+		gtk.MainQuit()
+	})
 
 	// Create UI layout
 	// init box
