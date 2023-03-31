@@ -1,4 +1,4 @@
-# lightdm-micro-greeter
+# LightDM µGreeter
 
 A minimalist LightDM greeter written in Go, powered by [gotk3](https://github.com/gotk3/gotk3) and inspired by [lightdm-mini-greeter](https://github.com/prikhi/lightdm-mini-greeter).  
 
@@ -6,7 +6,6 @@ Many thanks to Matt Fischer for [his great blog post](http://www.mattfischer.com
 
 ![screenshot](https://github.com/NiziL/lightdm-micro-greeter/blob/main/data/example.jpg)
 *Example screenshot, unknown artist: please open an issue to credit him/her !*
-
 
 ## Features
 
@@ -25,10 +24,7 @@ Many thanks to Matt Fischer for [his great blog post](http://www.mattfischer.com
 
 ## Installation
 
-### Package manager
-
-:rotating_light: Only manual installation is provided for now :rotating_light:  
-Any help to package lightdm-micro-greeter for your favorite distribution is greatly appreciated ! 
+:rotating_light: Any help to package µGreeter for your favorite distribution is greatly appreciated :rotating_light:  
 
 ### Manual 
 
