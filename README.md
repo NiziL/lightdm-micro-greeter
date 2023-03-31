@@ -20,7 +20,7 @@ Many thanks to Matt Fischer for [his great blog post](http://www.mattfischer.com
         - width
         - colors (font, background and carret)
     - label
-        - Choose text for username and password mode
+        - choose text for username and password mode
 
 ## Installation
 
