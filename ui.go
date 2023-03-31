@@ -5,6 +5,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"syscall"
 
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
@@ -47,6 +48,7 @@ func NewUI(config Configuration, entryCallback func()) (app *GreeterUI, err erro
 	// Quit gracefully on destroy
 	window.Connect("destroy", func() {
 		// looks like dead code, never really called
+		log.Printf("greeter window destroyed")
 		gtk.MainQuit()
 	})
 
@@ -81,28 +83,21 @@ func NewUI(config Configuration, entryCallback func()) (app *GreeterUI, err erro
 	app.entry.Connect("activate", entryCallback)
 	box.Add(app.entry)
 
-	// init dialog on esc press
-	window.Connect("key_press_event", func(win *gtk.Window, ev *gdk.Event) {
-		event := gdk.EventKey{ev}
-		if event.KeyVal() == gdk.KEY_Escape {
-			dialog, err := gtk.DialogNewWithButtons(
-				"Power control",
-				window,
-				gtk.DIALOG_DESTROY_WITH_PARENT|gtk.DIALOG_MODAL,
-				[]interface{}{"Poweroff", gtk.RESPONSE_ACCEPT},
-				[]interface{}{"Restart", gtk.RESPONSE_ACCEPT},
-				[]interface{}{"Suspend", gtk.RESPONSE_ACCEPT},
-				[]interface{}{"Hibernate", gtk.RESPONSE_ACCEPT},
-			)
-			if err != nil {
-				log.Printf("Error when creating dialog")
+	// init callback for power/suspend/hibernate/reboot
+	window.Connect("key_press_event", func(win *gtk.Window, e *gdk.Event) {
+		event := gdk.EventKeyNewFromEvent(e)
+		if event.State() == gdk.CONTROL_MASK+uint(gdk.SHIFT_MASK) {
+			switch event.KeyVal() {
+			case gdk.KEY_R:
+				log.Printf("Triggering restart")
+				syscall.Reboot(syscall.LINUX_REBOOT_CMD_RESTART)
+			case gdk.KEY_P:
+				log.Printf("Triggering poweroff")
+				syscall.Reboot(syscall.LINUX_REBOOT_CMD_POWER_OFF)
+			case gdk.KEY_H:
+				log.Printf("Triggering hibernation")
+				syscall.Reboot(syscall.LINUX_REBOOT_CMD_SW_SUSPEND)
 			}
-			dialog.Connect("response", func() {
-				dialog.Destroy()
-			})
-			dialog.Show()
-
-			//glib.IdleAdd(dialog.Show)
 		}
 	})
 
