@@ -7,6 +7,8 @@ import (
 	"os"
 
 	"github.com/gotk3/gotk3/gtk"
+
+	_ "embed"
 )
 
 type GreeterUI struct {
@@ -15,31 +17,8 @@ type GreeterUI struct {
 	label  *gtk.Label
 }
 
-const CSS_TEMPLATE = `
-window {
-	-gtk-dpi: %d;
-	background-image: url("%s");
-	background-size: cover; 
-	background-repeat: no-repeat; 
-}
-label {
-	color: %s;
-	margin: %dpx;
-}
-box {
-	margin-top: %dpx;
-	margin-bottom: %dpx;
-	margin-left: %dpx;
-	margin-right: %dpx;
-}
-entry {
-	color: %s;
-	background-color: %s;
-	caret-color: %s;
-	border: none;
-	box-shadow: none;
-}
-`
+//go:embed template.css
+var CSS_TEMPLATE string
 
 func NewUI(config Configuration, entryCallback func()) (app *GreeterUI, err error) {
 	app = &GreeterUI{}
