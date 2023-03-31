@@ -6,7 +6,10 @@ import (
 	"math/rand"
 	"os"
 
+	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
+
+	_ "embed"
 )
 
 type GreeterUI struct {
@@ -15,33 +18,10 @@ type GreeterUI struct {
 	label  *gtk.Label
 }
 
-const CSS_TEMPLATE = `
-window {
-	-gtk-dpi: %d;
-	background-image: url("%s");
-	background-size: cover; 
-	background-repeat: no-repeat; 
-}
-label {
-	color: %s;
-	margin: %dpx;
-}
-box {
-	margin-top: %dpx;
-	margin-bottom: %dpx;
-	margin-left: %dpx;
-	margin-right: %dpx;
-}
-entry {
-	color: %s;
-	background-color: %s;
-	caret-color: %s;
-	border: none;
-	box-shadow: none;
-}
-`
+//go:embed template.css
+var CSS_TEMPLATE string
 
-func NewUI(config Configuration, entryCallback func()) (app *GreeterUI, err error) {
+func NewUI(config Configuration, entryCallback func(), triggerCallback func(win *gtk.Window, e *gdk.Event)) (app *GreeterUI, err error) {
 	app = &GreeterUI{}
 	app.config = config
 
@@ -52,12 +32,8 @@ func NewUI(config Configuration, entryCallback func()) (app *GreeterUI, err erro
 	if err != nil {
 		return
 	}
-	window.Connect("destroy", func() {
-		// looks like dead code, never really called
-		gtk.MainQuit()
-	})
 	// get screen information to resize as full screen
-	// window.Fullscreen() is not working here
+	// Fullscreen() and Maximize() are not working here
 	display, err := window.GetDisplay()
 	if err != nil {
 		return
@@ -67,6 +43,15 @@ func NewUI(config Configuration, entryCallback func()) (app *GreeterUI, err erro
 		return
 	}
 	window.Resize(monitor.GetGeometry().GetWidth(), monitor.GetGeometry().GetHeight())
+
+	// bind key_press_event with triggerCallback
+	window.Connect("key_press_event", triggerCallback)
+	// Quit gracefully on destroy
+	window.Connect("destroy", func() {
+		// looks like dead code, never really called
+		log.Printf("greeter window destroyed")
+		gtk.MainQuit()
+	})
 
 	// Create UI layout
 	// init box
