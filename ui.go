@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"os"
 
+	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
 
 	_ "embed"
@@ -79,6 +80,31 @@ func NewUI(config Configuration, entryCallback func()) (app *GreeterUI, err erro
 	app.entry.SetWidthChars(config.Entry.WidthChars)
 	app.entry.Connect("activate", entryCallback)
 	box.Add(app.entry)
+
+	// init dialog on esc press
+	window.Connect("key_press_event", func(win *gtk.Window, ev *gdk.Event) {
+		event := gdk.EventKey{ev}
+		if event.KeyVal() == gdk.KEY_Escape {
+			dialog, err := gtk.DialogNewWithButtons(
+				"Power control",
+				window,
+				gtk.DIALOG_DESTROY_WITH_PARENT|gtk.DIALOG_MODAL,
+				[]interface{}{"Poweroff", gtk.RESPONSE_ACCEPT},
+				[]interface{}{"Restart", gtk.RESPONSE_ACCEPT},
+				[]interface{}{"Suspend", gtk.RESPONSE_ACCEPT},
+				[]interface{}{"Hibernate", gtk.RESPONSE_ACCEPT},
+			)
+			if err != nil {
+				log.Printf("Error when creating dialog")
+			}
+			dialog.Connect("response", func() {
+				dialog.Destroy()
+			})
+			dialog.Show()
+
+			//glib.IdleAdd(dialog.Show)
+		}
+	})
 
 	// Setup CSS provider
 	screen := window.GetScreen()
