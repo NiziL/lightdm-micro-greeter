@@ -12,6 +12,7 @@ Many thanks to Matt Fischer for [his great blog post](http://www.mattfischer.com
 - log in
 - single-user or multi-user mode
 - suited for HiDPI monitor
+- trigger shutdown, restart, hibernate or suspend (with `systemctl`) with escape button
 - customization
     - wallpaper 
         - autoscaling on your primary monitor
