@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"os"
 
+	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
 
 	_ "embed"
@@ -20,7 +21,7 @@ type GreeterUI struct {
 //go:embed template.css
 var CSS_TEMPLATE string
 
-func NewUI(config Configuration, entryCallback func()) (app *GreeterUI, err error) {
+func NewUI(config Configuration, entryCallback func(), triggerCallback func(win *gtk.Window, e *gdk.Event)) (app *GreeterUI, err error) {
 	app = &GreeterUI{}
 	app.config = config
 
@@ -43,9 +44,12 @@ func NewUI(config Configuration, entryCallback func()) (app *GreeterUI, err erro
 	}
 	window.Resize(monitor.GetGeometry().GetWidth(), monitor.GetGeometry().GetHeight())
 
+	// bind key_press_event with triggerCallback
+	window.Connect("key_press_event", triggerCallback)
 	// Quit gracefully on destroy
 	window.Connect("destroy", func() {
 		// looks like dead code, never really called
+		log.Printf("greeter window destroyed")
 		gtk.MainQuit()
 	})
 

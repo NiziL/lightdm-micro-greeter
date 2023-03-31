@@ -12,6 +12,11 @@ Many thanks to Matt Fischer for [his great blog post](http://www.mattfischer.com
 - log in
 - single-user or multi-user mode
 - suited for HiDPI monitor
+- triggers
+  - poweroff (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>)
+  - reboot (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd>)
+  - suspend (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>)
+  - hibernate (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>H</kbd>)
 - customization
     - wallpaper 
         - autoscaling on your primary monitor

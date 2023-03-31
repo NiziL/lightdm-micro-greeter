@@ -13,6 +13,9 @@ import (
 	"fmt"
 	"log"
 	"unsafe"
+
+	"github.com/gotk3/gotk3/gdk"
+	"github.com/gotk3/gotk3/gtk"
 )
 
 /*************/
@@ -91,6 +94,28 @@ func createEntryCallback(greeter *C.LightDMGreeter) func() {
 	}
 }
 
+func createTriggerCallback() func(win *gtk.Window, e *gdk.Event) {
+	return func(win *gtk.Window, e *gdk.Event) {
+		event := gdk.EventKeyNewFromEvent(e)
+		if event.State() == gdk.CONTROL_MASK+uint(gdk.SHIFT_MASK) {
+			switch event.KeyVal() {
+			case gdk.KEY_R:
+				log.Printf("Triggering restart")
+				C.lightdm_restart(nil)
+			case gdk.KEY_P:
+				log.Printf("Triggering poweroff")
+				C.lightdm_shutdown(nil)
+			case gdk.KEY_H:
+				log.Printf("Triggering hibernation")
+				C.lightdm_hibernate(nil)
+			case gdk.KEY_S:
+				log.Printf("Triggering suspend")
+				C.lightdm_suspend(nil)
+			}
+		}
+	}
+}
+
 /*************************/
 /* lightdm-micro-greeter */
 /*************************/
@@ -121,7 +146,7 @@ func main() {
 		log.Printf("[init_greeter] greeter connected to LightDM deamon")
 	}
 
-	app, err = NewUI(config, createEntryCallback(greeter))
+	app, err = NewUI(config, createEntryCallback(greeter), createTriggerCallback())
 	if err != nil {
 		log.Fatalf("[init_ui] fatal error: %s", err)
 	} else {
