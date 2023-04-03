@@ -1,0 +1,50 @@
+# Maintainer: NiziL biasutto.t@gmail.com
+
+pkgname=lightdm-micro-greeter
+pkgdesc='Minimalist LightDM greeter'
+pkgver=0.4.0
+pkgrel=2
+
+url="https://github.com/nizil/$pkgname"
+source=("$url/archive/v$pkgver/$pkgname-$pkgver.tar.gz")
+sha256sums=('8748de8e06aef27d0b37c46070f87cac7fb4ec57ba6ac0ac53db4290d8963811')
+
+license=('MIT')
+arch=('x86_64')
+
+depends=('lightdm' 'gtk3') # 'fontconfig' 'pango' 'gdk-pixbuf2' 'cairo' 'glibc' 'glib2') # should we add everything explicitly ?
+makedepends=('go')
+ 
+prepare(){
+  mkdir -vp $pkgname-$pkgver/build
+}
+
+build() {
+  cd "$pkgname-$pkgver"
+  export CGO_CPPFLAGS="${CPPFLAGS}"
+  export CGO_CFLAGS="${CFLAGS}"
+  export CGO_CXXFLAGS="${CXXFLAGS}"
+  export CGO_LDFLAGS="${LDFLAGS}"
+  export GOFLAGS="-buildmode=pie -trimpath -ldflags=-linkmode=external -mod=readonly -modcacherw"
+  go build -o build/
+}
+
+backup=("etc/lightdm/$pkgname/config.json") 
+
+package() {
+  cd "$pkgname-$pkgver"
+  install -Dm755 "build/$pkgname" -t "$pkgdir/usr/bin/"
+  install -Dm644 "data/$pkgname.desktop" -t "$pkgdir/usr/share/xgreeters/"
+  install -Dm644 "data/config.json" -t "$pkgdir/etc/lightdm/$pkgname/"
+  install -Dm644 "LICENSE" -t "$pkgdir/usr/share/licenses/$pkgname/"
+}
+
+post_install() {
+    echo "==> To enable lightdm-micro-greeter, change the following config files:"
+    echo "==>  /etc/lightdm/lightdm.conf"
+    echo "==>    greeter-session = lightdm-micro-greeter"
+    echo "==>"
+    echo "==> Then logout & restart lightdm:"
+    echo "==>"
+    echo "==>  sudo systemctl restart lightdm"
+}

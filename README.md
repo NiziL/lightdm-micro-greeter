@@ -31,12 +31,21 @@ Many thanks to Matt Fischer for [his great blog post](http://www.mattfischer.com
 
 :rotating_light: Any help to package µGreeter for your favorite distribution is greatly appreciated :rotating_light:  
 
+### Arch-based
+
+It's not in the AUR yet, but there is a `PKGBUILD` available in `pkg/AUR`.
+
+```bash
+git clone https://github.com/nizil/lightdm-micro-greeter
+cd lightdm-micro-greeter/pkg/AUR
+makepkg --install
+```
+
 ### Manual 
 
 #### Requirements 
 
-You need the C shared libraries `lightdm-gobject-1`, `gobject-2.0` and `glib-2.0`. They might be shipped with LightDM, but I can't tell for sure. Depending on your distro, you might have to install some `-dev` or `-devel` packages.
-
+You need to install `lightdm` and `gtk3`. Depending on your distro, you might have to install some `-dev` or `-devel` packages.  
 Obviously, you also need [Go](https://go.dev/doc/install).
 
 #### Get the binary
@@ -46,7 +55,7 @@ go install github.com/nizil/lightdm-micro-greeter@latest
 ```
 or 
 ```bash
-git clone github.com/nizil/lightdm-micro-greeter
+git clone https://github.com/nizil/lightdm-micro-greeter
 cd lightdm-micro-greeter
 go build
 ```
@@ -54,16 +63,12 @@ go build
 #### Setup the greeter
 
 Now, you have to tell LightDM to use this greeter, and this is done in two simples steps:
-- Create a [desktop entry](https://wiki.archlinux.org/title/desktop_entries) at `/usr/share/xgreeters` which execute `lightdm-micro-greeter`. 
+- Create a [XDG desktop entry](https://wiki.archlinux.org/title/desktop_entries) at `/usr/share/xgreeters` which execute `lightdm-micro-greeter`. 
 - Change the LightDM config to use the newly created `.desktop`, it could be done through the `greeter-session` parameter of `/etc/lightdm/lightdm.conf`.
 
-If you have used `go install` and `GOBIN` is in your `PATH`, you could use [the desktop file](https://github.com/NiziL/lightdm-micro-greeter/blob/main/data/lightdm-micro-greeter.desktop) provided.
+If you have used `go install` and `GOBIN` is in your `PATH`, you could use the [desktop](https://github.com/NiziL/lightdm-micro-greeter/blob/main/data/lightdm-micro-greeter.desktop) and [config](https://github.com/NiziL/lightdm-micro-greeter/blob/main/data/config.json) files provided.
 
 If you have used `go build`, you could just run the [install.sh](https://github.com/NiziL/lightdm-micro-greeter/blob/main/install.sh) script **as root**, which put the built binary inside `/usr/bin/`, setup the desktop file and a default configuration, and even modify your LightDM configuration file (while doing a backup).
-```bash
-sudo ./install.sh
-```
-
 
 ## Configuration
 
@@ -92,10 +97,8 @@ If the file does not exist, [this configuration](https://github.com/NiziL/lightd
 
 If `Wallpaper` is a directory, it must only contain images, as the greeter will randomly chose a file from this directory. 
 
-
 ## Dev notes
 
 I had to rely on C macro `G_CALLBACK` to bind the LightDM server callbacks, which is unfortunately not accessible through the `import "C"` statement.  
 To bind a go function to glib events, I've exported few go functions using `//export` statement and binded them with `G_CALLBACK` from C code `greeter_signal_connect.c`.  
 With this architecture, it has been pretty difficult to avoid the use of global vars to carry information from the UI to these callbacks. If you have any idea how to make a cleaner code here, open a ticket, I'll be more than happy to discuss about it :)
-
